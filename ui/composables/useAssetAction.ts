@@ -91,7 +91,7 @@ export const useAssetAction = () => {
   }
 
   /**
-   * @description 生成连接选项
+   * @description Generate connect options
    */
   function resolveGraphicsPreferences() {
     const resolvedKeyboardLayout
@@ -115,7 +115,7 @@ export const useAssetAction = () => {
   }
 
   /**
-   * @description 展示 user 信息,默认展示非 @ 开头的 user
+   * @description Display user info; by default shows users not starting with @
    * @param assetId
    */
   const displayUser = (assetId: string, accounts?: PermedAccount[]) => {
@@ -130,7 +130,7 @@ export const useAssetAction = () => {
   };
 
   /**
-   * @description 展示 protocol 信息
+   * @description Display protocol info
    * @param assetId
    */
   const displayProtocol = (assetId: string, protocols: PermedProtocol[]) => {
@@ -139,7 +139,7 @@ export const useAssetAction = () => {
   };
 
   /**
-   * @description 获取 connect_token 接口需要的 account
+   * @description Get the account needed by the connect_token endpoint
    * @param accounts
    * @param assetId
    * @param user
@@ -149,8 +149,8 @@ export const useAssetAction = () => {
     const saved = currentConnectionInfoMap.value[assetId];
     const username = saved?.username ?? user;
 
-    // 同名账号 account 使用 @USER
-    // 手动输入 account 使用 @INPUT
+    // Same-name account uses @USER
+    // Manual input account uses @INPUT
     // prettier-ignore
     const isManual = saved?.accountMode === "manual" || username === "手动输入" || username === "Manual input";
 
@@ -159,7 +159,7 @@ export const useAssetAction = () => {
 
     const isAnonymous = saved?.accountMode === "anonymous" || username.includes("@ANON");
 
-    // 已保存过托管账号的 ID 则优先使用
+    // Prefer the ID of a previously saved managed account, if one exists
     if (!isManual && !isDynamic && !isAnonymous && saved?.accountId) {
       return saved.accountId as any;
     }
@@ -176,7 +176,7 @@ export const useAssetAction = () => {
   };
 
   /**
-   * @description 获取连接令牌
+   * @description Get the connection token
    */
   const getConnectToken = (body: ConnectionBody) => {
     const rdpParams = buildLocalRdpParams();
@@ -195,7 +195,7 @@ export const useAssetAction = () => {
   };
 
   /**
-   * @description 根据协议分发连接方法
+   * @description Dispatch the connect method based on the protocol
    * @param protocol
    */
   const dispatchConnectMethod = (protocol: string) => {
@@ -272,7 +272,7 @@ export const useAssetAction = () => {
   };
 
   /**
-   * @description 处理连接事件
+   * @description Handle the connect event
    * @param user
    * @param assetId
    * @param displayProtocol
@@ -298,14 +298,14 @@ export const useAssetAction = () => {
     const saved = currentConnectionInfoMap.value[assetId];
     const isFormInput = ephemeral?.formInput === true;
 
-    // 只有弹窗确认时才使用本次表单数据；直接连接仍沿用已保存配置。
+    // Only use this form's data when confirmed via the popup; a direct connection still reuses the saved config.
     const effectiveMode = isFormInput ? ephemeral?.accountMode : saved?.accountMode ?? ephemeral?.accountMode;
     const selected = isFormInput ? user : saved?.username ?? user;
 
     let input_username = "";
     let input_secret = "";
 
-    // 根据展示选择反查账号对象（name/username/alias 任意匹配）
+    // Look up the account object from the displayed selection (matches any of name/username/alias)
     const _accounts = accounts || [];
     const matchedAccount = _accounts.find(
       (a) => a.username === selected || a.alias === selected || a.name === selected
@@ -316,14 +316,14 @@ export const useAssetAction = () => {
       input_username = isFormInput ? (ephemeral?.manualUsername || "") : saved?.manualUsername ?? matchedAccount?.username ?? "";
       input_secret = isFormInput ? (ephemeral?.manualPassword || "") : saved?.manualPassword ?? "";
     } else if (effectiveMode === "dynamic" || selected?.includes("同名账号") || selected?.includes("Dynamic user")) {
-      // 同名账号仅需传递密码
+      // A same-name account only needs the password passed through
       input_username = "";
       input_secret = isFormInput ? (ephemeral?.dynamicPassword || "") : saved?.dynamicPassword ?? "";
     } else if (effectiveMode === "anonymous" || selected?.includes("@ANON")) {
       input_username = "";
       input_secret = "";
     } else {
-      // 托管账号：account 用 ID，input_username 用展示账号名
+      // Managed account: account uses the ID, input_username uses the displayed account name
       input_username = selected || matchedAccount?.username || "";
       input_secret = "";
     }
@@ -348,7 +348,7 @@ export const useAssetAction = () => {
       return getUserId(accounts!, assetId, user);
     })();
 
-    // 当前连接显式选择优先；仅在协议一致时复用已保存连接方法，避免跨协议复用错误的客户端
+    // The current connection's explicit selection takes priority; only reuse the saved connect method when the protocol matches, to avoid reusing the wrong client across protocols
     const connectMethod = await resolveConnectMethod(
       protocol,
       ephemeral?.connectMethod?.trim() || (saved?.protocol === protocol ? saved?.connectMethod?.trim() : "")
@@ -383,7 +383,7 @@ export const useAssetAction = () => {
   };
 
   /**
-   * @description 处理重命名
+   * @description Handle rename
    * @param assetId
    * @param name
    */
@@ -397,7 +397,7 @@ export const useAssetAction = () => {
   };
 
   /**
-   * @description 处理资产收藏
+   * @description Handle asset favoriting
    * @param assetId
    */
   const handleAssetFavorite = (assetId: string) => {
@@ -407,7 +407,7 @@ export const useAssetAction = () => {
   };
 
   /**
-   * @description 处理取消收藏
+   * @description Handle unfavoriting
    * @param assetId
    */
   const handleAssetUnfavorite = (assetId: string) => {
@@ -417,7 +417,7 @@ export const useAssetAction = () => {
   };
 
   /**
-   * @description 获取详情
+   * @description Get details
    * @param assetId
    */
   const getAssetDetail = (assetId: string) => {
@@ -427,7 +427,7 @@ export const useAssetAction = () => {
   };
 
   /**
-   * @description 监听 tauri 事件
+   * @description Listen for tauri events
    */
   const listenTauriEvent = async () => {
     if (tauriListenersInitialized || tauriListenersRegistering) {
@@ -565,7 +565,7 @@ export const useAssetAction = () => {
           const permedAccounts = assetDetail.permed_accounts ?? [];
           const permedProtocols = assetDetail.permed_protocols ?? [];
 
-          // 不支持目录服务的 winrm 协议
+          // The winrm protocol doesn't support directory service
           const filteredPermedProtocols = permedProtocols.filter(
             (protocol: PermedProtocol) => protocol.name !== "winrm"
           );
@@ -578,7 +578,7 @@ export const useAssetAction = () => {
         }
       });
 
-      // TODO 提示
+      // TODO: notify
       unlistenGetAssetDetailFailed = await useTauriEventListen("get-asset-detail-failure", () => {
         // interface eventPayload {
         //   status: string
@@ -604,7 +604,7 @@ export const useAssetAction = () => {
           }
         } catch {}
 
-        // 更新资产名称
+        // Update the asset name
         if (assetId && name) {
           try {
             useEventBus().emit("assetRenamed", { assetId, name });

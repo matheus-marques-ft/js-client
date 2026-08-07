@@ -17,38 +17,41 @@ use url::Url;
 pub type JumpServerOAuthClient =
     BasicClient<EndpointSet, EndpointNotSet, EndpointNotSet, EndpointNotSet, EndpointSet>;
 
-/// OAuth 授权请求阶段的数据。
+/// Data for the OAuth authorization request stage.
 ///
-/// 创建授权 URL 后返回给 command 层使用：
-/// - `auth_url` 发给前端打开浏览器
-/// - `pkce_verifier` 和 `csrf` 暂存到 `AuthFlowState`，等待 callback 时校验和换 token
+/// Returned to the command layer after the authorization URL is created:
+/// - `auth_url` is sent to the frontend to open the browser
+/// - `pkce_verifier` and `csrf` are stashed in `AuthFlowState`, awaiting validation and token exchange at callback time
 pub struct OAuthAuthorizationRequest {
     pub auth_url: String,
     pub pkce_verifier: PkceCodeVerifier,
     pub csrf: CsrfToken,
 }
 
-/// 已注册并等待回调的 OAuth 授权流程。
+/// An OAuth authorization flow that's been registered and is awaiting its callback.
 ///
-/// command 层拿到它后，先把 `auth_url` 发给前端，再等待 `callback_rx`
-/// 接收 deep link 或 dev HTTP callback 解析出的授权码。
+/// Once the command layer has this, it sends `auth_url` to the frontend first, then
+/// awaits `callback_rx` to receive the authorization code parsed from a deep link or
+/// dev HTTP callback.
 pub struct PendingAuthorization {
     pub auth_url: String,
     pub callback_rx: oneshot::Receiver<CallbackParams>,
 }
 
-/// OAuth token 交换或刷新后的结果。
+/// Result of an OAuth token exchange or refresh.
 ///
-/// 登录成功和 refresh token 阶段都会生成这份数据，随后写入本地 token 存储。
+/// Generated both on successful login and during the refresh-token stage, then
+/// written to local token storage.
 pub struct OAuthTokenSet {
     pub access_token: String,
     pub refresh_token: Option<String>,
     pub expires_at: Option<i64>,
 }
 
-/// OAuth callback 阶段解析出的参数。
+/// Parameters parsed out during the OAuth callback stage.
 ///
-/// `code` 用于换取 token；`state`、`pkce_verifier`、`csrf` 用于完成 CSRF 校验和 PKCE 校验。
+/// `code` is used to exchange for a token; `state`, `pkce_verifier`, and `csrf` are
+/// used to complete CSRF and PKCE validation.
 pub struct CallbackParams {
     pub code: AuthorizationCode,
     pub state: Option<String>,
@@ -56,10 +59,11 @@ pub struct CallbackParams {
     pub csrf: CsrfToken,
 }
 
-/// JumpServer OAuth 服务端配置。
+/// JumpServer OAuth server configuration.
 ///
-/// 登录开始阶段从 well-known endpoint 获取，当前主要使用其中的 `client_id`，
-/// 其它字段保留用于描述服务端能力和后续兼容。
+/// Fetched from the well-known endpoint at the start of login; only `client_id` is
+/// really used right now, the other fields are kept to describe server capabilities
+/// and for future compatibility.
 #[derive(Deserialize, Debug)]
 #[allow(dead_code)]
 pub struct OAuthConfig {
@@ -79,25 +83,27 @@ pub struct OAuthConfig {
     pub refresh_token_expires_in: i64,
 }
 
-/// 登录发起后暂存在内存里的 OAuth 上下文。
+/// OAuth context stashed in memory after login is initiated.
 ///
-/// 这是内部结构，只在等待 callback 的阶段存在；callback 到达后会被取出并发送给等待中的登录任务。
+/// This is an internal structure that only exists while waiting for the callback;
+/// once the callback arrives it's taken out and sent to the waiting login task.
 struct PendingAuth {
     pkce_verifier: PkceCodeVerifier,
     csrf: CsrfToken,
     tx: oneshot::Sender<CallbackParams>,
 }
 
-/// OAuth 登录流程的共享状态。
+/// Shared state for the OAuth login flow.
 ///
-/// Tauri 管理这个状态，deep link 和 dev HTTP callback 都通过它把授权结果交回正在等待的 `auth_login`。
+/// Managed by Tauri; both the deep link and the dev HTTP callback hand the
+/// authorization result back to the waiting `auth_login` through this.
 #[derive(Default)]
 pub struct AuthFlowState {
     pending: Mutex<Option<PendingAuth>>,
 }
 
 impl OAuthTokenSet {
-    /// 将 OAuth token 写入本地安全存储。
+    /// Write the OAuth token to local secure storage.
     pub async fn persist(&self, site: &str, client_id: &str) -> Result<()> {
         let token_service = TokenService::new(site.to_string());
 
@@ -113,7 +119,7 @@ impl OAuthTokenSet {
 }
 
 impl AuthFlowState {
-    /// deep link 或 dev HTTP callback 解析到 code/state 后，调用这里唤醒登录流程。
+    /// Called to wake up the login flow once a deep link or dev HTTP callback has parsed a code/state.
     pub fn handle_callback(&self, raw_url: &str) {
         let Ok(url) = Url::parse(raw_url) else {
             return;
@@ -123,7 +129,7 @@ impl AuthFlowState {
         let mut state = None;
 
         for (key, value) in url.query_pairs() {
-            // query_pairs 返回 Cow<str>，这里转成 &str 方便和字符串字面量匹配。
+            // query_pairs returns Cow<str>; convert to &str here for easy matching against string literals.
             match key.as_ref() {
                 "code" => code = Some(value.to_string()),
                 "state" => state = Some(value.to_string()),
@@ -147,7 +153,7 @@ impl AuthFlowState {
         }
     }
 
-    /// 注册一次正在等待回调的 OAuth 授权流程。
+    /// Register an OAuth authorization flow that is now awaiting its callback.
     pub fn register_authorization(
         &self,
         authorize: OAuthAuthorizationRequest,
@@ -169,7 +175,7 @@ impl AuthFlowState {
         }
     }
 
-    /// 取消当前正在等待回调的 OAuth 授权流程。
+    /// Cancel the OAuth authorization flow currently awaiting its callback.
     pub fn cancel(&self) {
         if let Ok(mut guard) = self.pending.lock() {
             let _ = guard.take();
@@ -177,7 +183,7 @@ impl AuthFlowState {
     }
 }
 
-/// 从 JumpServer 获取 OAuth 服务端配置。
+/// Fetch the OAuth server configuration from JumpServer.
 pub async fn fetch_oauth_config(site: &str, client: &Client) -> Result<OAuthConfig> {
     let config_url = format!("{}{}", site, endpoint::oauth::WELL_KNOWN);
 
@@ -194,33 +200,33 @@ pub async fn fetch_oauth_config(site: &str, client: &Client) -> Result<OAuthConf
     Ok(config)
 }
 
-/// 构建 JumpServer OAuth client。
+/// Build the JumpServer OAuth client.
 pub fn build_oauth_client(site: &str, client_id: &str) -> Result<JumpServerOAuthClient> {
     let client = BasicClient::new(ClientId::new(client_id.to_string()))
-        // 指定授权端点：用户会被重定向到这个 URL 登录授权
+        // Set the authorization endpoint: the user gets redirected here to log in and authorize
         .set_auth_uri(AuthUrl::new(format!(
             "{}{}",
             site,
             endpoint::oauth::AUTHORIZE
         ))?)
-        // 指定令牌端点：后续用 code 或 refresh_token 换取 access_token。
+        // Set the token endpoint: used afterward to exchange a code or refresh_token for an access_token.
         .set_token_uri(TokenUrl::new(format!(
             "{}{}",
             site,
             endpoint::oauth::TOKEN
         ))?)
-        // Debug 模式走本地 HTTP callback，Release 走 deep link callback。
+        // Debug mode uses the local HTTP callback, Release mode uses the deep link callback.
         .set_redirect_uri(RedirectUrl::new(oauth_redirect_uri().to_string())?);
 
     Ok(client)
 }
 
-/// 创建 OAuth 授权请求，生成授权 URL、PKCE verifier 和 CSRF token。
+/// Create the OAuth authorization request, generating the authorization URL, PKCE verifier, and CSRF token.
 pub fn create_authorization_request(client: &JumpServerOAuthClient) -> OAuthAuthorizationRequest {
-    // 生成 PKCE
+    // Generate PKCE
     let (pkce_challenge, pkce_verifier) = PkceCodeChallenge::new_random_sha256();
 
-    // 生成 授权 URL
+    // Generate the authorization URL
     let (auth_url, csrf) = client
         .authorize_url(CsrfToken::new_random)
         .add_scope(Scope::new("write".to_string()))
@@ -266,13 +272,13 @@ where
     log::error!("{}", format_token_exchange_error(error));
 }
 
-/// 使用 OAuth callback 中的 code + PKCE verifier 换取 token。
+/// Exchange the code + PKCE verifier from an OAuth callback for a token.
 pub async fn exchange_authorization_code(
     client: &JumpServerOAuthClient,
     http_client: &Client,
     callback: CallbackParams,
 ) -> Result<OAuthTokenSet> {
-    // 校验 state，防止 CSRF。
+    // Validate state, to prevent CSRF.
     if let Some(state) = callback.state.as_ref() {
         if state != callback.csrf.secret() {
             anyhow::bail!("state mismatch");
@@ -300,7 +306,7 @@ pub async fn exchange_authorization_code(
     })
 }
 
-/// 撤销并删除本地保存的 OAuth token。
+/// Revoke and delete the locally stored OAuth token.
 pub async fn revoke_and_clear_tokens(site: &str) -> Result<()> {
     let token_service = TokenService::new(site.to_string());
 
@@ -322,7 +328,7 @@ pub async fn revoke_and_clear_tokens(site: &str) -> Result<()> {
     Ok(())
 }
 
-/// 确保 access_token 可用；如果即将过期，则使用 refresh_token 刷新并写回本地存储。
+/// Ensure an access_token is available; if it's about to expire, refresh it with the refresh_token and write it back to local storage.
 pub async fn ensure_fresh_token(site: &str, provided: Option<&str>) -> Result<String> {
     let token_service = TokenService::new(site.to_string());
     let entry = token_service.load().await?;
@@ -353,14 +359,14 @@ pub async fn ensure_fresh_token(site: &str, provided: Option<&str>) -> Result<St
     access.ok_or_else(|| anyhow::anyhow!("no access token available for site {}", site))
 }
 
-/// 判断 token 是否需要提前刷新。
+/// Check whether the token needs a preemptive refresh.
 fn should_refresh_token(expires_at: Option<i64>) -> bool {
     expires_at
         .map(|timestamp| timestamp <= Utc::now().timestamp() + 60)
         .unwrap_or(false)
 }
 
-/// 将 OAuth 返回的过期时长转换为本地时间戳。
+/// Convert the expiry duration returned by OAuth into a local timestamp.
 fn expires_at_timestamp(expires_in: Option<std::time::Duration>) -> Option<i64> {
     expires_in
         .map(|duration| {
@@ -369,7 +375,7 @@ fn expires_at_timestamp(expires_in: Option<std::time::Duration>) -> Option<i64> 
         .map(|datetime| datetime.timestamp())
 }
 
-/// 根据运行模式返回 OAuth redirect_uri。
+/// Return the OAuth redirect_uri based on the current run mode.
 fn oauth_redirect_uri() -> &'static str {
     if cfg!(debug_assertions) {
         "http://127.0.0.1:14876/auth/callback"
@@ -378,7 +384,7 @@ fn oauth_redirect_uri() -> &'static str {
     }
 }
 
-/// 使用 refresh_token 刷新 access_token。
+/// Refresh the access_token using the refresh_token.
 async fn refresh_access_token(
     site: &str,
     client_id: &str,
@@ -408,7 +414,7 @@ async fn refresh_access_token(
     })
 }
 
-/// 使用 refresh_token 向服务端发起撤销请求。
+/// Send a revocation request to the server using the refresh_token.
 async fn revoke_refresh_token(
     site: &str,
     client_id: &str,

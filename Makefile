@@ -2,183 +2,183 @@
 # Author: ZhaoJiSen
 # Version: 1.4.0
 
-# 颜色定义
+# Color definitions
 RED=\033[0;31m
 GREEN=\033[0;32m
 YELLOW=\033[1;33m
 BLUE=\033[0;34m
 NC=\033[0m # No Color
 
-# 项目信息
+# Project info
 PROJECT_NAME=jumpserver-client
 VERSION=1.4.0
 NODE_VERSION=23
 PNPM_VERSION=10.17.0
 
-# 默认目标
+# Default target
 .DEFAULT_GOAL := help
 
-# 帮助信息
+# Help info
 .PHONY: help
-help: ## 显示帮助信息
+help: ## Show help info
 	@echo "$(GREEN)JumpServer Client Tauri Project$(NC)"
 	@echo "$(BLUE)Version: $(VERSION)$(NC)"
 	@echo ""
-	@echo "$(YELLOW)可用命令:$(NC)"
+	@echo "$(YELLOW)Available commands:$(NC)"
 	@awk 'BEGIN {FS = ":.*?## "} /^[a-zA-Z_-]+:.*?## / {printf "  $(GREEN)%-20s$(NC) %s\n", $$1, $$2}' $(MAKEFILE_LIST)
 
-# 环境检查
+# Environment check
 .PHONY: check-env
-check-env: ## 检查开发环境
-	@echo "$(BLUE)检查开发环境...$(NC)"
-	@command -v node >/dev/null 2>&1 || { echo "$(RED)错误: Node.js 未安装$(NC)"; exit 1; }
-	@command -v pnpm >/dev/null 2>&1 || { echo "$(RED)错误: pnpm 未安装$(NC)"; exit 1; }
-	@command -v cargo >/dev/null 2>&1 || { echo "$(RED)错误: Rust/Cargo 未安装$(NC)"; exit 1; }
-	@command -v tauri >/dev/null 2>&1 || { echo "$(RED)错误: Tauri CLI 未安装$(NC)"; exit 1; }
-	@echo "$(GREEN)✓ 环境检查通过$(NC)"
+check-env: ## Check the dev environment
+	@echo "$(BLUE)Checking dev environment...$(NC)"
+	@command -v node >/dev/null 2>&1 || { echo "$(RED)Error: Node.js is not installed$(NC)"; exit 1; }
+	@command -v pnpm >/dev/null 2>&1 || { echo "$(RED)Error: pnpm is not installed$(NC)"; exit 1; }
+	@command -v cargo >/dev/null 2>&1 || { echo "$(RED)Error: Rust/Cargo is not installed$(NC)"; exit 1; }
+	@command -v tauri >/dev/null 2>&1 || { echo "$(RED)Error: Tauri CLI is not installed$(NC)"; exit 1; }
+	@echo "$(GREEN)✓ Environment check passed$(NC)"
 
-# 安装依赖
+# Install dependencies
 .PHONY: install
-install: check-env ## 安装项目依赖
-	@echo "$(BLUE)安装前端依赖...$(NC)"
+install: check-env ## Install project dependencies
+	@echo "$(BLUE)Installing frontend dependencies...$(NC)"
 	pnpm install
-	@echo "$(GREEN)✓ 依赖安装完成$(NC)"
+	@echo "$(GREEN)✓ Dependency install complete$(NC)"
 
-# 开发模式运行
+# Run dev mode
 .PHONY: dev
-dev: install ## 启动开发模式 (热重载)
-	@echo "$(BLUE)启动 Tauri 开发模式...$(NC)"
+dev: install ## Start dev mode (hot reload)
+	@echo "$(BLUE)Starting Tauri dev mode...$(NC)"
 	pnpm run tauri:dev
 
-# 仅前端开发
+# Frontend dev only
 .PHONY: dev-frontend
-dev-frontend: install ## 仅启动前端开发服务器
-	@echo "$(BLUE)启动前端开发服务器...$(NC)"
+dev-frontend: install ## Start only the frontend dev server
+	@echo "$(BLUE)Starting frontend dev server...$(NC)"
 	pnpm run dev
 
-# 构建项目
+# Build the project
 .PHONY: build
-build: install ## 构建生产版本
-	@echo "$(BLUE)构建生产版本...$(NC)"
+build: install ## Build the production version
+	@echo "$(BLUE)Building production version...$(NC)"
 	pnpm run tauri:build
-	@echo "$(GREEN)✓ 构建完成$(NC)"
+	@echo "$(GREEN)✓ Build complete$(NC)"
 
-# 调试构建
+# Debug build
 .PHONY: build-debug
-build-debug: install ## 构建调试版本
-	@echo "$(BLUE)构建调试版本...$(NC)"
+build-debug: install ## Build the debug version
+	@echo "$(BLUE)Building debug version...$(NC)"
 	pnpm run tauri:build:debug
-	@echo "$(GREEN)✓ 调试构建完成$(NC)"
+	@echo "$(GREEN)✓ Debug build complete$(NC)"
 
-# 代码检查
+# Lint code
 .PHONY: lint
-lint: ## 运行代码检查
-	@echo "$(BLUE)运行代码检查...$(NC)"
+lint: ## Run lint checks
+	@echo "$(BLUE)Running lint checks...$(NC)"
 	pnpm run lint
-	@echo "$(GREEN)✓ 代码检查完成$(NC)"
+	@echo "$(GREEN)✓ Lint check complete$(NC)"
 
-# 清理项目
+# Clean the project
 .PHONY: clean
-clean: ## 清理构建文件和依赖
-	@echo "$(BLUE)清理项目...$(NC)"
+clean: ## Clean build files and dependencies
+	@echo "$(BLUE)Cleaning project...$(NC)"
 	pnpm run reset
-	@echo "$(GREEN)✓ 清理完成$(NC)"
+	@echo "$(GREEN)✓ Clean complete$(NC)"
 
-# 完全重新开始
+# Full fresh start
 .PHONY: fresh-start
-fresh-start: clean install dev ## 完全重新开始 (清理 + 安装 + 开发)
+fresh-start: clean install dev ## Full fresh start (clean + install + dev)
 
-# 版本管理
+# Version management
 .PHONY: bump
-bump: ## 更新版本号
-	@echo "$(BLUE)更新版本号...$(NC)"
+bump: ## Bump the version number
+	@echo "$(BLUE)Bumping version number...$(NC)"
 	pnpm run bump
-	@echo "$(GREEN)✓ 版本更新完成$(NC)"
+	@echo "$(GREEN)✓ Version bump complete$(NC)"
 
-# 生成静态文件
+# Generate static files
 .PHONY: generate
-generate: ## 生成静态文件
-	@echo "$(BLUE)生成静态文件...$(NC)"
+generate: ## Generate static files
+	@echo "$(BLUE)Generating static files...$(NC)"
 	pnpm run generate
-	@echo "$(GREEN)✓ 静态文件生成完成$(NC)"
+	@echo "$(GREEN)✓ Static file generation complete$(NC)"
 
-# 运行清理脚本
+# Run cleanup script
 .PHONY: cleanup
-cleanup: ## 运行清理脚本
-	@echo "$(BLUE)运行清理脚本...$(NC)"
+cleanup: ## Run the cleanup script
+	@echo "$(BLUE)Running cleanup script...$(NC)"
 	pnpm run cleanup
-	@echo "$(GREEN)✓ 清理脚本执行完成$(NC)"
+	@echo "$(GREEN)✓ Cleanup script complete$(NC)"
 
-# 检查 Rust 依赖
+# Check Rust dependencies
 .PHONY: check-rust
-check-rust: ## 检查 Rust 依赖
-	@echo "$(BLUE)检查 Rust 依赖...$(NC)"
+check-rust: ## Check Rust dependencies
+	@echo "$(BLUE)Checking Rust dependencies...$(NC)"
 	cd src-tauri && cargo check
-	@echo "$(GREEN)✓ Rust 依赖检查完成$(NC)"
+	@echo "$(GREEN)✓ Rust dependency check complete$(NC)"
 
-# 更新 Rust 依赖
+# Update Rust dependencies
 .PHONY: update-rust
-update-rust: ## 更新 Rust 依赖
-	@echo "$(BLUE)更新 Rust 依赖...$(NC)"
+update-rust: ## Update Rust dependencies
+	@echo "$(BLUE)Updating Rust dependencies...$(NC)"
 	cd src-tauri && cargo update
-	@echo "$(GREEN)✓ Rust 依赖更新完成$(NC)"
+	@echo "$(GREEN)✓ Rust dependency update complete$(NC)"
 
-# 运行 Rust 测试
+# Run Rust tests
 .PHONY: test-rust
-test-rust: ## 运行 Rust 测试
-	@echo "$(BLUE)运行 Rust 测试...$(NC)"
+test-rust: ## Run Rust tests
+	@echo "$(BLUE)Running Rust tests...$(NC)"
 	cd src-tauri && cargo test
-	@echo "$(GREEN)✓ Rust 测试完成$(NC)"
+	@echo "$(GREEN)✓ Rust tests complete$(NC)"
 
-# 格式化 Rust 代码
+# Format Rust code
 .PHONY: fmt-rust
-fmt-rust: ## 格式化 Rust 代码
-	@echo "$(BLUE)格式化 Rust 代码...$(NC)"
+fmt-rust: ## Format Rust code
+	@echo "$(BLUE)Formatting Rust code...$(NC)"
 	cd src-tauri && cargo fmt
-	@echo "$(GREEN)✓ Rust 代码格式化完成$(NC)"
+	@echo "$(GREEN)✓ Rust code formatting complete$(NC)"
 
-# 检查 Rust 代码
+# Check Rust code
 .PHONY: clippy
-clippy: ## 运行 Rust clippy 检查
-	@echo "$(BLUE)运行 Rust clippy 检查...$(NC)"
+clippy: ## Run Rust clippy checks
+	@echo "$(BLUE)Running Rust clippy checks...$(NC)"
 	cd src-tauri && cargo clippy
-	@echo "$(GREEN)✓ Rust clippy 检查完成$(NC)"
+	@echo "$(GREEN)✓ Rust clippy check complete$(NC)"
 
-# 开发环境设置
+# Set up the dev environment
 .PHONY: setup-dev
-setup-dev: check-env install ## 设置开发环境
-	@echo "$(GREEN)✓ 开发环境设置完成$(NC)"
-	@echo "$(YELLOW)提示: 运行 'make dev' 开始开发$(NC)"
+setup-dev: check-env install ## Set up the dev environment
+	@echo "$(GREEN)✓ Dev environment setup complete$(NC)"
+	@echo "$(YELLOW)Tip: run 'make dev' to start developing$(NC)"
 
-# 显示项目信息
+# Show project info
 .PHONY: info
-info: ## 显示项目信息
-	@echo "$(GREEN)项目信息:$(NC)"
-	@echo "  名称: $(PROJECT_NAME)"
-	@echo "  版本: $(VERSION)"
+info: ## Show project info
+	@echo "$(GREEN)Project info:$(NC)"
+	@echo "  Name: $(PROJECT_NAME)"
+	@echo "  Version: $(VERSION)"
 	@echo "  Node.js: $(NODE_VERSION)"
 	@echo "  pnpm: $(PNPM_VERSION)"
 	@echo ""
-	@echo "$(BLUE)技术栈:$(NC)"
-	@echo "  前端: Nuxt 3 + Vue 3 + TypeScript"
-	@echo "  后端: Tauri + Rust"
-	@echo "  包管理: pnpm"
-	@echo "  构建工具: Vite"
+	@echo "$(BLUE)Tech stack:$(NC)"
+	@echo "  Frontend: Nuxt 3 + Vue 3 + TypeScript"
+	@echo "  Backend: Tauri + Rust"
+	@echo "  Package manager: pnpm"
+	@echo "  Build tool: Vite"
 
-# 快速开发命令
+# Quick dev command
 .PHONY: quick-dev
-quick-dev: ## 快速开发 (跳过环境检查)
-	@echo "$(BLUE)快速启动开发模式...$(NC)"
+quick-dev: ## Quick dev (skip environment check)
+	@echo "$(BLUE)Quickly starting dev mode...$(NC)"
 	pnpm run tauri:dev
 
-# 监控模式
+# Watch mode
 .PHONY: watch
-watch: ## 监控文件变化并自动重启
-	@echo "$(BLUE)启动监控模式...$(NC)"
+watch: ## Watch for file changes and auto-restart
+	@echo "$(BLUE)Starting watch mode...$(NC)"
 	pnpm run dev -- --watch
 
-# 生产环境预览
+# Production preview
 .PHONY: preview
-preview: build ## 预览生产构建
-	@echo "$(BLUE)启动生产预览...$(NC)"
+preview: build ## Preview the production build
+	@echo "$(BLUE)Starting production preview...$(NC)"
 	pnpm run tauri:dev -- --mode production

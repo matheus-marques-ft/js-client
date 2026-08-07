@@ -9,7 +9,7 @@ use super::consts::menu_labels;
 
 const DEFAULT_PRODUCT_NAME: &str = "JumpServerClient";
 
-/// 创建应用菜单
+/// Create the application menu
 pub fn build_menu<R: Runtime>(app: &impl Manager<R>) -> tauri::Result<Menu<R>> {
     let use_zh = prefers_zh();
     let app_name = app.package_info().name.clone();
@@ -22,7 +22,7 @@ pub fn build_menu<R: Runtime>(app: &impl Manager<R>) -> tauri::Result<Menu<R>> {
         None::<&str>,
     )?;
 
-    // 设置项
+    // Settings item
     let settings_i = MenuItem::with_id(
         app,
         "open-settings",
@@ -111,7 +111,7 @@ pub fn build_menu<R: Runtime>(app: &impl Manager<R>) -> tauri::Result<Menu<R>> {
     Menu::with_items(app, &[&app_menu, &edit_menu])
 }
 
-/// 菜单事件处理
+/// Menu event handling
 pub fn handle_menu_event(app_handle: &tauri::AppHandle, event: &MenuEvent) {
     match event.id().as_ref() {
         "open-settings" => {
@@ -160,7 +160,7 @@ pub fn handle_menu_event(app_handle: &tauri::AppHandle, event: &MenuEvent) {
     }
 }
 
-/// 打开/聚焦设置窗口
+/// Open/focus the settings window
 pub fn open_settings_window<R: Runtime>(app: &tauri::AppHandle<R>) {
     let label = "secondary";
 
@@ -188,7 +188,7 @@ pub fn open_settings_window<R: Runtime>(app: &tauri::AppHandle<R>) {
         Ok(_win) => {
             #[cfg(any(target_os = "windows", target_os = "linux"))]
             {
-                // Windows / Linux 下禁用原生装饰，与主窗口保持一致
+                // Disable native decorations on Windows/Linux, to stay consistent with the main window
                 if let Err(e) = _win.set_decorations(false) {
                     warn!("Failed to disable decorations for settings window: {}", e);
                 }
@@ -198,7 +198,7 @@ pub fn open_settings_window<R: Runtime>(app: &tauri::AppHandle<R>) {
                     warn!("Failed to disable shadow for settings window: {}", e);
                 }
 
-                // 额外清空该窗口菜单，避免系统残留菜单栏
+                // Also clear this window's menu, to avoid a leftover system menu bar
                 if let Ok(empty_menu) = Menu::with_items(app, &[]) {
                     if let Err(e) = _win.set_menu(empty_menu) {
                         warn!("Failed to clear menu for settings window: {}", e);
@@ -212,7 +212,7 @@ pub fn open_settings_window<R: Runtime>(app: &tauri::AppHandle<R>) {
     }
 }
 
-/// 打开 About 弹窗
+/// Open the About popup
 pub fn open_about_window<R: Runtime>(app: &tauri::AppHandle<R>) {
     let label = "about-window";
     if let Some(win) = app.get_webview_window(label) {
@@ -254,7 +254,7 @@ pub fn open_about_window<R: Runtime>(app: &tauri::AppHandle<R>) {
     let _ = builder.build();
 }
 
-/// 获取系统语言
+/// Get the system language
 fn prefers_zh() -> bool {
     tauri_plugin_os::locale()
         .or_else(|| std::env::var("LANG").ok())

@@ -28,7 +28,7 @@ export const useThemeAdapter = () => {
   const waitHydration = async () => {
     if (isHydrated.value) return;
 
-    // 等待 useSettingManager 完成初始化
+    // Wait for useSettingManager to finish initializing
     if (!hydrationPromise.value) {
       await nextTick();
     }
@@ -45,7 +45,7 @@ export const useThemeAdapter = () => {
   };
 
   /**
-   * @description 应用首次加载默认使用 OS Theme
+   * @description The app defaults to the OS theme on first load
    */
   const initialTheme = async () => {
     await waitHydration();
@@ -130,7 +130,7 @@ export const useThemeAdapter = () => {
   };
 
   const listenOSThemeChange = () => {
-    // 监听 OS 主题变化
+    // Listen for OS theme changes
     currentWindow.onThemeChanged((event: Event<Theme>) => {
       currentOSTheme.value = event.payload;
 

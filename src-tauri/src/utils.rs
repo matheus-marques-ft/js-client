@@ -11,7 +11,7 @@ const MAX_WINDOW_WIDTH: f64 = 1800.0;
 const MAX_WINDOW_HEIGHT: f64 = 1000.0;
 const WINDOW_SIZE_UNIT_LOGICAL: &str = "logical";
 
-/// 判断是否为 OAuth 回调 deeplink
+/// Check whether this is an OAuth callback deeplink
 pub fn is_auth_callback(raw_url: &str) -> bool {
     if let Ok(url) = Url::parse(raw_url) {
         return url.scheme() == "jms"
@@ -24,7 +24,7 @@ pub fn is_auth_callback(raw_url: &str) -> bool {
     false
 }
 
-/// 获取本地时区偏移字符串
+/// Get the local timezone offset string
 pub fn tz_offset_string() -> String {
     let local_offset = Local::now().offset().fix().local_minus_utc();
     let hours = local_offset / 3600;
@@ -33,33 +33,38 @@ pub fn tz_offset_string() -> String {
     format!("{:+03}:{:02}", hours, minutes)
 }
 
-/// 初始化并持久化窗口尺寸（存逻辑尺寸 DIP），避免跨显示器缩放导致的视觉尺寸变化。
-/// - 存储：逻辑像素宽高（width/height，DIP）
+/// Initialize and persist the window size (stored as logical DIP size), to avoid
+/// visual size changes caused by cross-monitor scaling.
+/// - Storage: logical pixel width/height (width/height, DIP)
 ///
-/// - 恢复：
-///   直接按逻辑尺寸 set_size；若仅有旧的物理像素存档，则按当前缩放换算为逻辑尺寸后再设置。
-///   Tauri/底层窗口系统会根据 当前屏幕的 scale factor，自动把逻辑尺寸换算成物理像素
+/// - Restore:
+///   set_size directly using the logical size; if only an old physical-pixel record
+///   exists, convert it to logical size using the current scale before setting it.
+///   Tauri/the underlying windowing system automatically converts the logical size
+///   into physical pixels based on the current screen's scale factor
 ///
-/// - 原理：逻辑像素 × 缩放比 = 物理像素; 只在 “尺寸变化/应用打开” 时关心缩放比，中间存的永远是逻辑尺寸
+/// - Principle: logical pixels × scale factor = physical pixels; the scale factor
+///   only matters at “size change / app open” time — what's stored in between is
+///   always the logical size
 pub fn setup_window_size_persistence(win: WebviewWindow) {
-    // 恢复上次保存的尺寸
+    // Restore the last saved size
     if let Err(e) = restore_window_size(&win) {
         warn!("restore_window_size failed: {}", e);
     }
 
-    // 监听窗口变化，记录 DIP
+    // Listen for window changes and record the DIP size
     let h = win.app_handle().clone();
     let win_for_events = win.clone();
     win.on_window_event(move |event| {
         if let tauri::WindowEvent::Resized(size) = event {
-            // 跳过最小化/最大化状态下的尺寸变化，避免存入不合理的尺寸
+            // Skip size changes while minimized/maximized, to avoid storing an unreasonable size
             if win_for_events.is_minimized().ok().unwrap_or(false)
                 || win_for_events.is_maximized().ok().unwrap_or(false)
             {
                 return;
             }
 
-            // 将事件给出的物理尺寸转换为逻辑尺寸：logical = physical / scale_factor
+            // Convert the physical size from the event into a logical size: logical = physical / scale_factor
             let factor = win_for_events.scale_factor().ok().unwrap_or(1.0);
             let width_logical = (size.width as f64 / factor).max(1.0);
             let height_logical = (size.height as f64 / factor).max(1.0);
@@ -120,20 +125,20 @@ fn restore_window_size(win: &WebviewWindow) -> Result<(), String> {
         if is_logical || (width <= MAX_WINDOW_WIDTH && height <= MAX_WINDOW_HEIGHT) {
             (width, height)
         } else {
-            // 没有 unit 的旧数据可能把物理像素写在 width/height 里
+            // Old data without a unit may have physical pixels written into width/height
             (width / factor, height / factor)
         }
     } else if let (Some(wpx), Some(hpx)) = (
         v.get("width_px").and_then(|x| x.as_f64()),
         v.get("height_px").and_then(|x| x.as_f64()),
     ) {
-        // 从物理像素换算为逻辑尺寸
+        // Convert from physical pixels to logical size
         (wpx / factor, hpx / factor)
     } else {
         return Ok(());
     };
 
-    // 限制窗口尺寸：宽度 600-1800，高度 400-1000
+    // Clamp window size: width 600-1800, height 400-1000
     let w = width_logical.clamp(MIN_WINDOW_WIDTH, MAX_WINDOW_WIDTH);
     let h = height_logical.clamp(MIN_WINDOW_HEIGHT, MAX_WINDOW_HEIGHT);
 

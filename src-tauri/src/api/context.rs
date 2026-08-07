@@ -1,12 +1,12 @@
 use reqwest::RequestBuilder;
 
-/// 请求通用上下文
+/// Common request context
 pub struct ApiContext<'a> {
     pub bearer_token: &'a str,
     pub org_id: &'a str,
 }
 
-/// 请求上下文需要提供 Org 信息
+/// The request context must provide Org info
 pub trait OrgScoped {
     fn org(&self) -> &str;
 }
@@ -17,7 +17,7 @@ impl<'a> OrgScoped for ApiContext<'a> {
     }
 }
 
-/// 给请求追加 Org 相关的 Header
+/// Append the Org-related header to the request
 pub fn apply_org_header<T>(request: RequestBuilder, org_scoped: &T) -> RequestBuilder
 where
     T: OrgScoped + ?Sized,

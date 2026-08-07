@@ -33,7 +33,7 @@ export function transformAssetsData(rawDataArray: RawAssetData[]): AssetItem[] {
 }
 
 /**
- * @description 获取操作系统的语言
+ * @description Get the operating system's language
  */
 export async function resolveLanguageFromSystem(): Promise<"zh" | "en"> {
   const normalize = (lang: string | null | undefined) => {

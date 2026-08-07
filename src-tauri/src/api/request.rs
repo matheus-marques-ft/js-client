@@ -22,7 +22,7 @@ pub struct ApiRequestClient {
 }
 
 impl ApiRequestClient {
-    /// 创建绑定站点 origin 的 API 客户端，后续 endpoint 可以直接拼成完整 URL
+    /// Create an API client bound to the site origin, so endpoints can later be concatenated directly into full URLs
     pub fn with_origin(
         origin: String,
         bearer_token: String,
@@ -36,7 +36,7 @@ impl ApiRequestClient {
         })
     }
 
-    /// 根据当前 API 会话上下文创建请求客户端
+    /// Create a request client from the current API session context
     pub fn from_session(context: &ApiSessionContext) -> Result<Self, reqwest::Error> {
         Self::with_origin(
             context.origin.clone(),
@@ -45,12 +45,12 @@ impl ApiRequestClient {
         )
     }
 
-    /// 将集中定义的 API path 拼接为当前站点下的完整 URL
+    /// Concatenate a centrally-defined API path into a full URL under the current site
     pub fn endpoint(&self, path: &str) -> String {
         format!("{}{}", self.origin.trim_end_matches('/'), path)
     }
 
-    /// 发送 GET 请求并转换为统一 ApiResponse
+    /// Send a GET request and convert it into the unified ApiResponse
     pub async fn get_with_response(&self, url: &str) -> ApiResponse {
         info!("GET {}", url);
 
@@ -58,7 +58,7 @@ impl ApiRequestClient {
             .await
     }
 
-    /// 发送带 query 参数的 GET 请求并转换为统一 ApiResponse
+    /// Send a GET request with query parameters and convert it into the unified ApiResponse
     pub async fn get_with_query_response<T>(&self, url: &str, query: &T) -> ApiResponse
     where
         T: Serialize + ?Sized,
@@ -68,7 +68,7 @@ impl ApiRequestClient {
             .await
     }
 
-    /// 发送 JSON POST 请求并转换为统一 ApiResponse
+    /// Send a JSON POST request and convert it into the unified ApiResponse
     pub async fn post_json_with_response<T>(&self, url: &str, body: &T) -> ApiResponse
     where
         T: Serialize + ?Sized,
@@ -80,23 +80,23 @@ impl ApiRequestClient {
             .await
     }
 
-    /// 发送 DELETE 请求并转换为统一 ApiResponse
+    /// Send a DELETE request and convert it into the unified ApiResponse
     pub async fn delete_with_response(&self, url: &str) -> ApiResponse {
         info!("DELETE {}", url);
         self.send_with_response(Method::DELETE, url, |request| request)
             .await
     }
 
-    /// 构建并执行底层 reqwest 请求
+    /// Build and execute the underlying reqwest request
     async fn send<F>(&self, method: Method, url: &str, apply: F) -> Result<Response, reqwest::Error>
     where
         F: FnOnce(RequestBuilder) -> RequestBuilder,
     {
         let request = apply(self.base_request(method, url)).build()?;
-        self.client.execute(request).await // execute 表示把已经构建好的请求发出去
+        self.client.execute(request).await // execute sends the already-built request
     }
 
-    /// 把客户端内部保存的 Token 和组织信息转换为请求上下文
+    /// Convert the token and organization info stored inside the client into a request context
     fn context(&self) -> ApiContext<'_> {
         ApiContext {
             bearer_token: &self.bearer_token,
@@ -104,7 +104,7 @@ impl ApiRequestClient {
         }
     }
 
-    /// 创建带有公共 header 的基础请求
+    /// Create a base request with common headers
     fn base_request(&self, method: Method, url: &str) -> RequestBuilder {
         let context = self.context();
         let mut request = self
@@ -127,7 +127,7 @@ impl ApiRequestClient {
         }
     }
 
-    /// 执行请求并转换为统一响应结构
+    /// Execute the request and convert it into the unified response structure
     async fn send_with_response<F>(&self, method: Method, url: &str, apply: F) -> ApiResponse
     where
         F: FnOnce(RequestBuilder) -> RequestBuilder,
@@ -136,7 +136,7 @@ impl ApiRequestClient {
     }
 }
 
-/// 从 URL 中提取 Referer 头部值，确保仅包含协议、主机和端口
+/// Extract the Referer header value from a URL, keeping only the scheme, host, and port
 fn referer_from(url: &str) -> Option<String> {
     Url::parse(url).ok().and_then(|url| match url.scheme() {
         "http" | "https" => {
@@ -154,7 +154,7 @@ fn referer_from(url: &str) -> Option<String> {
     })
 }
 
-/// 输出请求体内容
+/// Log the request body content
 fn log_json_body<T>(body: &T)
 where
     T: Serialize + ?Sized,

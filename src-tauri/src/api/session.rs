@@ -16,7 +16,7 @@ pub struct ApiSessionContext {
 }
 
 impl ApiSessionStore {
-    /// 设置当前站点、账号、Token 和组织上下文
+    /// Set the current site, account, token, and organization context
     pub fn set_current_session(
         &self,
         session_key: String,
@@ -32,7 +32,7 @@ impl ApiSessionStore {
         values.insert(Self::field_key(&session_key, "org_id"), org_id);
     }
 
-    /// 更新当前会话使用的组织 ID
+    /// Update the organization ID used by the current session
     pub fn set_current_org(&self, org_id: String) -> Result<(), String> {
         let mut values = self.values.write().expect("api session lock poisoned");
         let session_key = values
@@ -44,7 +44,7 @@ impl ApiSessionStore {
         Ok(())
     }
 
-    /// 更新当前会话保存的 bearer token
+    /// Update the bearer token stored by the current session
     pub fn update_current_bearer_token(&self, bearer_token: String) -> Result<(), String> {
         let mut values = self.values.write().expect("api session lock poisoned");
         let session_key = values
@@ -56,7 +56,7 @@ impl ApiSessionStore {
         Ok(())
     }
 
-    /// 读取当前会话上下文，缺少任一关键字段时返回 None
+    /// Read the current session context; returns None if any key field is missing
     pub fn current_context(&self) -> Option<ApiSessionContext> {
         let values = self.values.read().expect("api session lock poisoned");
         let session_key = values.get(CURRENT_SESSION_KEY)?.clone();
@@ -74,7 +74,7 @@ impl ApiSessionStore {
         })
     }
 
-    /// 生成 HashMap 中某个会话字段的内部 key
+    /// Generate the internal HashMap key for a session field
     fn field_key(session_key: &str, field: &str) -> String {
         format!("session:{}:{}", session_key, field)
     }

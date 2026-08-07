@@ -29,7 +29,7 @@ const modalTitle = computed(() => {
 });
 
 /**
- * @description 初始化 Form
+ * @description Initialize the Form
  * @param asset
  */
 const initDraft = (asset: AssetItem, preferredProtocol?: string) => {
@@ -38,12 +38,12 @@ const initDraft = (asset: AssetItem, preferredProtocol?: string) => {
   const protocols = sortPermedProtocols(asset.permedProtocols || ([] as PermedProtocol[]));
   const accounts = asset.permedAccounts || ([] as PermedAccount[]);
 
-  // 协议默认：保存的协议 -> 第一个协议 -> 空
+  // Protocol default: saved protocol -> first protocol -> empty
   draftProtocol.value = protocols.some((protocol) => protocol.name === preferredProtocol)
     ? preferredProtocol!
     : saved?.protocol || protocols[0]?.name || "";
 
-  // 账号默认：保存的用户名 -> 第一条托管账号 -> 动态账号(@USER) -> 手动输入(@INPUT) -> 空
+  // Account default: saved username -> first managed account -> dynamic account (@USER) -> manual input (@INPUT) -> empty
   if (saved?.username) {
     draftAccount.value = saved!.username;
   } else {
@@ -75,7 +75,7 @@ const initDraft = (asset: AssetItem, preferredProtocol?: string) => {
 };
 
 /**
- * @description 拼凑连接信息
+ * @description Assemble the connection info
  */
 const normalizeProtocols = () => {
   return sortPermedProtocols(currentAsset.value?.permedProtocols || [])
@@ -128,7 +128,7 @@ const buildConnectionInfo = () => {
 };
 
 /**
- * @description 关闭 modal
+ * @description Close the modal
  */
 const close = () => {
   open.value = false;
@@ -136,7 +136,7 @@ const close = () => {
 };
 
 /**
- * @description 点击确认
+ * @description Click confirm
  */
 const onConfirm = () => {
   const info = buildConnectionInfo();
@@ -148,7 +148,7 @@ const onConfirm = () => {
 };
 
 /**
- * @description 点击取消
+ * @description Click cancel
  */
 const onCancel = () => {
   pendingReject?.("cancelled");
@@ -188,7 +188,7 @@ async function ensureDetails(asset: AssetItem) {
 }
 
 /**
- * @description 打开 Modal
+ * @description Open the Modal
  * @param asset
  */
 async function openModal(asset: AssetItem, preferredProtocol?: string): Promise<any> {

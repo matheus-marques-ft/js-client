@@ -10,7 +10,7 @@ const { layouts, sort, setSort, setLayouts } = useSettingManager();
 
 const localePath = useLocalePath();
 
-// 公共按钮配置
+// Common button config
 const commonButtonProps = {
   size: "sm" as const,
   variant: "ghost" as const,
@@ -19,9 +19,9 @@ const commonButtonProps = {
 
 const showCustomWindowControls = computed(() => !isMacOS.value);
 
-// 窗口控制按钮配置
+// Window control button config
 const windowControlButtons = computed(() => {
-  // Windows 下显示窗口控制按钮
+  // Show window control buttons on Windows
   return [
     {
       key: "minimize",
@@ -50,7 +50,7 @@ const windowControlButtons = computed(() => {
   ];
 });
 
-// 获取窗口控制按钮的样式类
+// Get the style class for window control buttons
 const getWindowControlButtonClass = (buttonKey: string) => {
   const isLinuxStyle = isLinux.value;
   const baseClass = isLinuxStyle
@@ -71,7 +71,7 @@ const getWindowControlButtonClass = (buttonKey: string) => {
   }
 };
 
-// 从 Operation 组件移动过来的按钮操作逻辑
+// Button action logic moved over from the Operation component
 const actionItems = computed<ActionItem[]>(() => [
   {
     key: "refresh",
@@ -182,7 +182,7 @@ const actionItems = computed<ActionItem[]>(() => [
       const label = "secondary";
       const existing = await useTauriWebviewWindowWebviewWindow.getByLabel(label);
 
-      // 如果已经打开过,直接置顶
+      // Bring it to the front if it's already open
       if (existing) {
         try {
           if (await existing.isMinimized()) {
@@ -200,7 +200,7 @@ const actionItems = computed<ActionItem[]>(() => [
         return;
       }
 
-      // 直接创建窗口
+      // Create the window directly
 
       const useNativeWindowFrame = isMacOS.value;
       new useTauriWebviewWindowWebviewWindow(label, {
@@ -248,7 +248,7 @@ const actionItems = computed<ActionItem[]>(() => [
       </template>
     </div>
 
-    <!-- 窗口控制按钮 -->
+    <!-- Window control buttons -->
     <div v-if="showCustomWindowControls" class="flex items-center" :class="isLinux ? 'gap-1.5' : ''">
       <template v-for="button of windowControlButtons" :key="button.key">
         <UButton

@@ -29,7 +29,7 @@ export const useApplicationConfig = () => {
   };
 
   onMounted(async () => {
-    // 仅在主窗口拉取配置；其他窗口直接读取结果
+    // Only fetch config in the main window; other windows read the result directly
     const cur = await useTauriWebviewWindowGetCurrentWebviewWindow();
 
     if (cur && cur.label !== "main") {

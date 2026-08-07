@@ -55,10 +55,10 @@ pub struct AssetQuery {
 }
 
 impl AssetQuery {
-    // 根据资产类型和组织初始化资产查询参数
+    // Initialize asset query parameters from the asset type and organization
     #[allow(dead_code)]
     pub fn new(asset_type: Category, org: String) -> Self {
-        // r#type 这种形式是因为 type 是 Rust 关键字，所以要写成 r#type
+        // The r#type form is used because `type` is a Rust keyword, so it must be written as r#type
         let (r#type, category) = match asset_type {
             Category::Database | Category::Device => (None, Some(asset_type)),
             Category::Web => (None, Some(asset_type)),
@@ -80,9 +80,9 @@ impl AssetQuery {
         }
     }
 
-    /// 获取当前查询使用的资产分类
+    /// Get the asset category used by the current query
     pub fn get_category(&self) -> Category {
-        // 先调用 category，如果没有就用 type
+        // Prefer category; fall back to type if it's not set
         self.category.or(self.r#type).unwrap_or_default()
     }
 }
@@ -109,7 +109,7 @@ impl AssetService {
         Self { api }
     }
 
-    /// 获取指定分类下的资产列表，支持普通资产和收藏节点资产两种入口
+    /// Get the asset list for a given category, supporting both regular assets and favorite-node assets
     pub async fn get_category_assets(&self, query: &AssetQuery, favorite: bool) -> ApiResponse {
         let path = if favorite {
             endpoint::assets::FAVORITE_NODE_ASSETS
@@ -120,7 +120,7 @@ impl AssetService {
         let url = self.api.endpoint(path);
 
         info!(
-            "获取类型为：{:?} 的资产信息，请求 url: {}, oid: {}",
+            "Fetching asset info of type: {:?}, request url: {}, oid: {}",
             query.get_category(),
             url,
             query.oid
@@ -154,13 +154,13 @@ impl AssetService {
             .await
     }
 
-    /// 获取当前用户收藏的资产列表
+    /// Get the current user's favorite asset list
     pub async fn get_favorite_assets(&self) -> ApiResponse {
         let url = self.api.endpoint(endpoint::assets::FAVORITE_ASSETS);
         self.api.get_with_response(&url).await
     }
 
-    /// 获取指定资产的详情信息
+    /// Get the detail info for a given asset
     pub async fn get_asset_detail(&self, asset_id: &str) -> ApiResponse {
         let path = endpoint::assets::detail(asset_id);
         let url = self.api.endpoint(&path);
@@ -168,7 +168,7 @@ impl AssetService {
         self.api.get_with_response(&url).await
     }
 
-    /// 将指定资产加入收藏
+    /// Add an asset to favorites
     pub async fn favorite(&self, asset_id: &str) -> ApiResponse {
         let url = self.api.endpoint(endpoint::assets::FAVORITE_ASSETS);
         let body = FavoriteAssetBody {
@@ -178,7 +178,7 @@ impl AssetService {
         self.api.post_json_with_response(&url, &body).await
     }
 
-    /// 从收藏列表中移除指定资产
+    /// Remove an asset from the favorites list
     pub async fn unfavorite(&self, asset_id: &str) -> ApiResponse {
         let mut url = self.api.endpoint(endpoint::assets::FAVORITE_ASSETS);
 
@@ -190,7 +190,7 @@ impl AssetService {
         self.api.delete_with_response(&url).await
     }
 
-    /// 提交资产重命名请求
+    /// Submit an asset rename request
     pub async fn rename(&self, asset_id: &str, name: &str, oid: &str) -> ApiResponse {
         let url = self.api.endpoint(endpoint::assets::MY_ASSET);
         let body = RenameBody {
@@ -219,8 +219,8 @@ impl AssetService {
             oid: oid.clone(),
         };
 
-        // 菜单和 JumpServer 的原始 type/category 不是一一对应：
-        // Windows 要合并 windows + windows_ad，Other 要合并 unix + other。
+        // The menu doesn't map 1:1 to JumpServer's raw type/category:
+        // Windows needs to merge windows + windows_ad, Other needs to merge unix + other.
         match query.get_category() {
             Category::Linux => vec![exact(Some(Category::Linux), None)],
             Category::Windows => vec![
@@ -262,14 +262,14 @@ impl AssetService {
                     .unwrap_or_default()
                     .to_string();
 
-                // 合并多个接口结果时按资产 ID 去重，避免未来后端类型收敛后重复展示。
+                // Dedupe by asset ID when merging multiple endpoint results, to avoid duplicate display if the backend types converge in the future.
                 if asset_id.is_empty() || seen_ids.insert(asset_id) {
                     combined.push(item);
                 }
             }
         }
 
-        // 多个独立查询拼起来后需要重新做一次全量排序，否则列表会按子查询分段。
+        // After concatenating multiple independent queries, a full re-sort is needed, otherwise the list stays segmented by sub-query.
         Self::sort_assets(&mut combined, query.order.as_deref());
 
         let total = combined.len();
@@ -339,7 +339,7 @@ impl AssetService {
             let page_size = results.len();
             all_results.extend(results);
 
-            // 这里主动翻完后端分页，前端菜单才能在“组合类型”场景下拿到准确总数和切片。
+            // Deliberately page through all backend results here, so the frontend menu gets an accurate total and slice in the "combined type" case.
             if page_size == 0 || all_results.len() >= count {
                 break;
             }
@@ -356,7 +356,7 @@ impl AssetService {
             .filter(|value| !value.is_empty())
             .unwrap_or("name");
 
-        // 当前客户端只有 name / date_updated 这几种排序，空值时退回 name 保证混合结果稳定。
+        // This client only supports sorting by name / date_updated; fall back to name when empty to keep combined results stable.
         let descending = normalized.starts_with('-');
         let field = normalized.trim_start_matches('-');
 

@@ -1,42 +1,42 @@
-# JumpServer Client 连接插件
+# JumpServer Client Connection Plugins
 
-将 `config.json` 中的应用连接配置拆分为独立插件包，便于维护和扩展。
+Splits the app connection config from `config.json` into standalone plugin packages, for easier maintenance and extension.
 
-## 目录结构
+## Directory structure
 
 ```
 plugins/
-├── windows/                    # Windows 内置插件
-│   ├── index.json              # 当前平台插件索引
+├── windows/                    # Built-in Windows plugins
+│   ├── index.json              # Plugin index for the current platform
 │   ├── plugins-state.defaults.json
-│   └── windows.*/              # 各插件目录
-├── macos/                      # macOS 内置插件
-├── linux/                      # Linux 内置插件
+│   └── windows.*/              # Each plugin's directory
+├── macos/                      # Built-in macOS plugins
+├── linux/                      # Built-in Linux plugins
 ├── demo/
-│   └── hello-terminal/         # 第三方开发示例
+│   └── hello-terminal/         # Third-party development example
 ├── schema/                     # JSON Schema
 ├── tools/
-│   └── split-config.py         # 从 config.json 重新生成平台插件
+│   └── split-config.py         # Regenerates platform plugins from config.json
 ```
 
-## 单个插件结构
+## Single plugin structure
 
 ```
 macos.tigervnc/
-├── manifest.json    # 元数据（名称、协议、分类、说明）
-├── connect.json     # 当前平台启动方式、默认路径、启用状态等
-└── icon.png         # 设置页图标（可选）
+├── manifest.json    # Metadata (name, protocol, category, description)
+├── connect.json     # Current platform's launch method, default path, enabled state, etc.
+└── icon.png         # Settings page icon (optional)
 ```
 
-## 重新生成内置插件
+## Regenerating built-in plugins
 
-修改 `go-client/config.json` 后，可从备份恢复完整配置再执行：
+After modifying `go-client/config.json`, restore the full config from a backup, then run:
 
 ```bash
 python3 plugins/tools/split-config.py
 ```
 
-## 文档
+## Documentation
 
-- [架构设计](../docs/plugins/DESIGN.md)
-- [开发指南](../docs/plugins/DEVELOPER.md)
+- [Architecture Design](../docs/plugins/DESIGN.md)
+- [Developer Guide](../docs/plugins/DEVELOPER.md)

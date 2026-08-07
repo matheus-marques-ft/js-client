@@ -1,20 +1,20 @@
-# Hello Terminal — 连接插件 Demo
+# Hello Terminal — Connection Plugin Demo
 
-最小可运行的 JumpServer Client 连接插件示例，用于验证插件目录结构、打包流程和脚本启动约定。
+A minimal working example of a JumpServer Client connection plugin, used to verify the plugin directory structure, packaging flow, and script launch conventions.
 
-## 文件说明
+## File overview
 
-| 文件 | 作用 |
+| File | Purpose |
 |------|------|
-| `manifest.json` | 插件元数据 |
-| `connect.json` | 各平台启动方式 |
-| `icon.png` | 设置页图标（128×128） |
-| `scripts/` | 平台启动脚本 |
+| `manifest.json` | Plugin metadata |
+| `connect.json` | Launch method per platform |
+| `icon.png` | Settings page icon (128×128) |
+| `scripts/` | Platform launch scripts |
 
-## 本地安装测试
+## Local install test
 
 ```bash
-# 从仓库根目录执行
+# Run from the repo root
 PLUGIN_DIR="$(pwd)/plugins/demo/hello-terminal"
 
 # macOS
@@ -26,20 +26,20 @@ DEST=~/.config/jumpserver-client/plugins/demo.hello-terminal
 mkdir -p "$(dirname "$DEST")" && cp -R "$PLUGIN_DIR" "$DEST"
 ```
 
-重启客户端后，在 **设置 → 应用 → SSH** 中启用「Hello Terminal (Demo)」。
+After restarting the client, enable "Hello Terminal (Demo)" under **Settings → Apps → SSH**.
 
-## 打包
+## Packaging
 
 ```bash
 ./plugins/tools/pack.sh plugins/demo/hello-terminal
 ```
 
-输出：`dist/demo.hello-terminal@1.0.0.jscplugin`
+Output: `dist/demo.hello-terminal@1.0.0.jscplugin`
 
-## 改造为真实工具
+## Turning it into a real tool
 
-1. 将 `launch.type` 改为 `args`，填写目标客户端命令行模板；或
-2. 保留 `script`，在脚本内调用真实可执行文件；或
-3. 使用 `url` 类型对接 URL Scheme（如 Navicat）
+1. Change `launch.type` to `args` and fill in the target client's command-line template; or
+2. Keep `script`, and call the real executable from within the script; or
+3. Use the `url` type to hook into a URL scheme (e.g. Navicat)
 
-详细说明见 [开发者指南](../../docs/plugins/DEVELOPER.md)。
+See the [Developer Guide](../../docs/plugins/DEVELOPER.md) for details.

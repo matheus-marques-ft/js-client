@@ -130,7 +130,7 @@ function handleUnfavorite(asset: AssetItem) {
 }
 
 /**
- * @description 处理上下文事件
+ * @description Handle the context event
  */
 function handleContextTrigger(asset: AssetItem) {
   emits("contextTrigger", asset);
@@ -163,7 +163,7 @@ function cancelRename() {
 }
 
 /**
- * @description 触发重命名
+ * @description Trigger rename
  */
 function handleRenameTrigger(asset: AssetItem) {
   renamingId.value = asset.id;

@@ -27,11 +27,11 @@ else
   CURRENT_ARCH := $(shell if echo "$(TARGET)" | grep -q "aarch64"; then echo "arm64"; elif echo "$(TARGET)" | grep -q "x86_64"; then echo "amd64"; else echo "$(DEFAULT_ARCH)"; fi)
 endif
 
-# 默认目标：构建并安装当前平台
+# Default target: build and install for the current platform
 .PHONY: default
 default: build-current install
 
-# 构建当前平台
+# Build the current platform
 .PHONY: build-current
 build-current:
 	@echo "Building for current platform: $(CURRENT_OS)/$(CURRENT_ARCH)"
@@ -60,7 +60,7 @@ build-current:
 		cp $(BASEPATH)/pkg/autoit/*.dll $(BASEPATH)/../src-tauri/resources/bin/windows/; \
 	fi
 
-# 构建所有平台 - 优化版本：在一个任务中构建所有目标
+# Build all platforms - optimized version: builds all targets in a single task
 .PHONY: build-all
 build-all:
 	@echo "Building all platforms in one task..."
@@ -97,9 +97,9 @@ build-all:
 	
 	@echo "Build completed for all platforms!"
 
-# 安装到 Tauri resources 目录 - 只复制当前平台
-# 支持通过 TARGET 参数传入，例如: make install TARGET=aarch64-apple-darwin
-# 如果不传 TARGET 或 TARGET 为空，则使用默认的自动检测
+# Install into the Tauri resources directory - copies only the current platform
+# Supports passing TARGET as a parameter, e.g.: make install TARGET=aarch64-apple-darwin
+# Falls back to auto-detection if TARGET is not passed or is empty
 .PHONY: install
 install:
 	@echo "Installing Go client for platform: $(CURRENT_OS)/$(CURRENT_ARCH)"
@@ -126,7 +126,7 @@ install:
 	@cp -R $(BASEPATH)/../plugins/linux $(BASEPATH)/../src-tauri/resources/plugins/
 	@echo "Install completed!"
 
-# 帮助信息
+# Help info
 .PHONY: help
 help:
 	@echo "Available targets:"
@@ -139,6 +139,6 @@ help:
 	@echo ""
 	@echo "Current platform: $(CURRENT_OS)/$(CURRENT_ARCH)"
 
-# build-client 就是 build-current + install
+# build-client is just build-current + install
 .PHONY: build-client
 build-client: build-current install

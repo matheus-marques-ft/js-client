@@ -1,33 +1,33 @@
-# 连接插件开发指南
+# Connection Plugin Developer Guide
 
-本文档面向第三方开发者，说明如何为 JumpServer Client 编写、调试和分发连接插件。
+This document is for third-party developers, and explains how to write, debug, and distribute connection plugins for JumpServer Client.
 
-## 快速开始
+## Quick Start
 
-### 1. 复制 Demo
+### 1. Copy the Demo
 
 ```bash
 cp -r plugins/demo/hello-terminal plugins/my-company-my-tool
 ```
 
-### 2. 修改 manifest.json
+### 2. Edit manifest.json
 
-- 将 `id` 改为全局唯一值（推荐反向域名：`com.yourcompany.toolname`）
-- 填写 `category`、`protocols`、`comment` 等
+- Change `id` to a globally unique value (reverse domain notation recommended: `com.yourcompany.toolname`)
+- Fill in `category`, `protocols`, `comment`, etc.
 
-### 3. 编写 connect.json
+### 3. Write connect.json
 
-为每个目标平台配置 `executable` 与 `launch` 策略（见 [DESIGN.md](./DESIGN.md)）。
+Configure the `executable` and `launch` strategy for each target platform (see [DESIGN.md](./DESIGN.md)).
 
-### 4. 准备图标
+### 4. Prepare the icon
 
-- `icon.png`，128×128 PNG，透明背景更佳
+- `icon.png`, 128×128 PNG, transparent background preferred
 
-### 5. 本地测试
+### 5. Local testing
 
-**方式 A — 目录安装（开发推荐）**
+**Method A — Directory install (recommended for development)**
 
-将插件目录复制到用户配置目录：
+Copy the plugin directory to the user config directory:
 
 ```bash
 # macOS / Linux
@@ -39,23 +39,23 @@ Copy-Item -Recurse plugins\demo\hello-terminal `
   "$env:APPDATA\jumpserver-client\plugins\demo.hello-terminal"
 ```
 
-重启客户端，在 **设置 → 应用 → SSH** 中应能看到 "Hello Terminal (Demo)"。
+After restarting the client, you should see "Hello Terminal (Demo)" under **Settings → Apps → SSH**.
 
-**方式 B — 打包安装**
+**Method B — Packaged install**
 
 ```bash
 ./plugins/tools/pack.sh plugins/demo/hello-terminal
-# 生成 dist/demo.hello-terminal@1.0.0.jscplugin
-# 在客户端「设置 → 插件管理」中选择该文件安装（阶段 2 功能）
+# Generates dist/demo.hello-terminal@1.0.0.jscplugin
+# Select this file to install it under the client's "Settings → Plugin Management" (a phase 2 feature)
 ```
 
-### 6. 打包分发
+### 6. Package and distribute
 
-将 `.jscplugin` 文件分发给用户，或上架到企业插件仓库。
+Distribute the `.jscplugin` file to users, or publish it to an enterprise plugin repository.
 
 ---
 
-## manifest.json 字段说明
+## manifest.json field reference
 
 ```json
 {
@@ -65,7 +65,7 @@ Copy-Item -Recurse plugins\demo\hello-terminal `
   "version": "1.0.0",
   "min_client_version": "4.0.0",
   "author": "JumpServer Community",
-  "homepage": "https://github.com/jumpserver/clients",
+  "homepage": "https://github.com/matheus-marques-ft/js-client",
   "download_url": "",
   "category": "terminal",
   "protocols": ["ssh"],
@@ -77,19 +77,19 @@ Copy-Item -Recurse plugins\demo\hello-terminal `
 }
 ```
 
-**注意**：
+**Note**:
 
-- `id` 安装后不可修改，升级插件应提高 `version` 并保持 `id` 不变
-- `category` 必须与实际用途一致，决定在哪个设置子页面出现
-- `protocols` 中的协议必须在 JumpServer 中已支持
+- `id` cannot be changed after installation; when upgrading a plugin, bump `version` and keep `id` unchanged
+- `category` must match the actual purpose, since it determines which settings sub-page it appears on
+- The protocols in `protocols` must already be supported in JumpServer
 
 ---
 
-## connect.json 详解
+## connect.json in detail
 
-### 简单参数模式（args）
+### Simple argument mode (args)
 
-适用于命令行参数固定的工具，如 PuTTY、DBeaver CLI：
+For tools with a fixed command-line argument format, such as PuTTY or the DBeaver CLI:
 
 ```json
 {
@@ -109,19 +109,19 @@ Copy-Item -Recurse plugins\demo\hello-terminal `
 }
 ```
 
-`executable.type` 取值：
+`executable.type` values:
 
-| 值 | 说明 |
+| Value | Description |
 |----|------|
-| `bundled` | 使用客户端自带的二进制（`default` 为相对路径） |
-| `system` | 系统 PATH 中的命令（`default` 为命令名，如 `putty.exe`） |
-| `user_path` | 用户必须在设置中选择可执行文件路径 |
+| `bundled` | Uses the binary bundled with the client (`default` is a relative path) |
+| `system` | A command on the system PATH (`default` is the command name, e.g. `putty.exe`) |
+| `user_path` | The user must select the executable path in Settings |
 
-### 脚本模式（script）
+### Script mode (script)
 
-适用于 iTerm2、需要 AppleScript / PowerShell 自动化的场景。
+For scenarios like iTerm2 that need AppleScript / PowerShell automation.
 
-`connect.json`：
+`connect.json`:
 
 ```json
 {
@@ -137,13 +137,13 @@ Copy-Item -Recurse plugins\demo\hello-terminal `
 }
 ```
 
-脚本约定：
+Script conventions:
 
-- 通过环境变量 `JMS_CONNECT_JSON` 接收连接上下文（JSON 字符串）
-- 退出码 `0` 表示成功，非 `0` 表示失败
-- 标准错误输出会显示在客户端日志中
+- Receives the connection context (a JSON string) via the `JMS_CONNECT_JSON` environment variable
+- Exit code `0` means success, non-`0` means failure
+- Stderr output shows up in the client logs
 
-脚本接收的 JSON 示例：
+Example JSON received by the script:
 
 ```json
 {
@@ -157,9 +157,9 @@ Copy-Item -Recurse plugins\demo\hello-terminal `
 }
 ```
 
-### URL Scheme 模式（url）
+### URL Scheme mode (url)
 
-适用于 Navicat 等通过自定义协议启动的工具：
+For tools like Navicat that launch via a custom protocol:
 
 ```json
 {
@@ -170,9 +170,9 @@ Copy-Item -Recurse plugins\demo\hello-terminal `
 }
 ```
 
-### 临时文件模式（file）
+### Temp file mode (file)
 
-适用于 RDP：先写入 `.rdp` 文件再打开。
+For RDP: writes a `.rdp` file first, then opens it.
 
 ```json
 {
@@ -184,23 +184,23 @@ Copy-Item -Recurse plugins\demo\hello-terminal `
 }
 ```
 
-客户端会将服务端下发的 `file.content` 写入临时文件，再按平台打开。
+The client writes the server-provided `file.content` to a temp file, then opens it per-platform.
 
 ---
 
-## 多协议插件
+## Multi-protocol plugins
 
-一个插件可支持多个协议（如 XShell 同时支持 ssh、telnet）。在 `manifest.protocols` 中列出即可。
+A single plugin can support multiple protocols (e.g. XShell supports both ssh and telnet). Just list them in `manifest.protocols`.
 
-用户为每个协议独立选择默认工具；同一插件可被选为多个协议的默认项。
+The user picks a default tool independently for each protocol; the same plugin can be selected as the default for multiple protocols.
 
 ---
 
-## 调试技巧
+## Debugging tips
 
-1. **查看合并配置**：调用 Tauri `get_config`，确认插件已出现在对应 `category` 数组中
-2. **查看 awaken 日志**：`{config_dir}/jumpserver-client/logs/`
-3. **脚本调试**：手动执行脚本并注入环境变量：
+1. **Inspect the merged config**: call the Tauri `get_config` command, and confirm the plugin appears in the corresponding `category` array
+2. **Check the awaken logs**: `{config_dir}/jumpserver-client/logs/`
+3. **Script debugging**: run the script manually and inject the environment variable:
 
 ```bash
 export JMS_CONNECT_JSON='{"protocol":"ssh","host":"127.0.0.1","port":22,"username":"test","value":"pass","name":"test"}'
@@ -209,37 +209,37 @@ osascript plugins/demo/hello-terminal/scripts/launch.macos.applescript
 
 ---
 
-## 常见问题
+## FAQ
 
-### 插件未出现在设置页？
+### Plugin doesn't show up on the settings page?
 
-- 检查 `category` 与页面是否匹配（如 SSH 页面对应 `terminal` + `ssh`）
-- 检查 `platforms` 是否包含当前操作系统
-- 检查 `plugins-state.json` 中是否 `enabled: false`
+- Check whether `category` matches the page (e.g. the SSH page corresponds to `terminal` + `ssh`)
+- Check whether `platforms` includes the current operating system
+- Check whether `plugins-state.json` has `enabled: false` for it
 
-### Windows 下路径选择？
+### Path picker on Windows?
 
-`executable.type` 为 `user_path` 时，设置页会显示「选择路径」按钮（与现有第三方工具行为一致）。
+When `executable.type` is `user_path`, the settings page shows a "Select Path" button (consistent with the behavior of existing third-party tools).
 
-### 能否依赖客户端内置二进制？
+### Can it depend on a binary bundled with the client?
 
-可以。`executable.type: "bundled"`，`default` 填写相对于客户端 `resources/bin/` 的路径。仅 JumpServer 官方内置插件建议使用此类型。
-
----
-
-## 版本兼容
-
-- 提高插件 `version` 即可覆盖安装
-- `min_client_version` 低于当前客户端版本时拒绝安装
-- 新增 `launch.type` 时会在 `min_client_version` 中声明
+Yes. Use `executable.type: "bundled"`, with `default` set to a path relative to the client's `resources/bin/`. This type is recommended only for JumpServer's own official built-in plugins.
 
 ---
 
-## 提交官方内置插件
+## Version compatibility
 
-若希望插件进入 JumpServer 官方发行版：
+- Bumping the plugin's `version` is enough to trigger a reinstall/overwrite
+- Installation is rejected if `min_client_version` is higher than the current client version
+- New `launch.type` values are declared via `min_client_version`
 
-1. 在 `plugins/builtin/` 下提交 PR
-2. 设置 `manifest.builtin: true`
-3. 提供各平台实测记录
-4. 图标放入插件目录，**不要**再改 `settingItems.vue` 中的硬编码映射
+---
+
+## Submitting an official built-in plugin
+
+If you'd like your plugin included in the official JumpServer release:
+
+1. Submit a PR under `plugins/builtin/`
+2. Set `manifest.builtin: true`
+3. Provide test records for each platform
+4. Put the icon inside the plugin's own directory — **do not** touch the hardcoded mapping in `settingItems.vue`

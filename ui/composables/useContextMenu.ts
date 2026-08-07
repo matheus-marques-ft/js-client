@@ -1,53 +1,53 @@
 import type { AssetItem } from "~/types/index";
 
 export function useContextMenu() {
-  // 上下文菜单状态
+  // Context menu state
   const contextMenuVisible = ref(false);
   const contextMenuPosition = ref({ x: 0, y: 0 });
   const contextMenuAsset = ref<AssetItem | null>(null);
 
   /**
-   * 显示上下文菜单
+   * Show the context menu
    */
   const showContextMenu = (asset: AssetItem, event?: MouseEvent) => {
     contextMenuAsset.value = asset;
 
     if (event) {
-      const menuWidth = 200; // 菜单宽度
-      const menuHeight = 200; // 菜单高度
+      const menuWidth = 200; // menu width
+      const menuHeight = 200; // menu height
       const viewportWidth = window.innerWidth;
       const viewportHeight = window.innerHeight;
 
       let x = event.clientX;
       let y = event.clientY;
 
-      // 检查是否来自表格按钮（通过检查目标元素）
+      // Check whether this came from a table button (by inspecting the target element)
       const target = event.target as HTMLElement;
       const isTableButton
         = target?.hasAttribute("data-table-context-button")
           || target?.closest("[data-table-context-button]")
           || target?.closest(".UTable");
 
-      // 如果是表格按钮，优先显示在左侧
+      // If this is a table button, prefer showing it on the left
       if (isTableButton) {
         x = event.clientX - menuWidth;
-        // 如果左侧空间不够，则显示在右侧
+        // Show it on the right if there isn't enough room on the left
         if (x < 10) {
           x = event.clientX;
         }
       } else {
-        // 对于其他情况（如右键菜单），如果菜单会超出右边界，则显示在左侧
+        // For other cases (e.g. right-click menu), show it on the left if it would overflow the right edge
         if (x + menuWidth > viewportWidth) {
           x = event.clientX - menuWidth;
         }
       }
 
-      // 如果菜单会超出下边界，则向上调整
+      // Adjust upward if the menu would overflow the bottom edge
       if (y + menuHeight > viewportHeight) {
         y = event.clientY - menuHeight;
       }
 
-      // 确保不超出左边界和上边界
+      // Make sure it doesn't overflow the left or top edges
       x = Math.max(10, x);
       y = Math.max(10, y);
 
@@ -58,7 +58,7 @@ export function useContextMenu() {
   };
 
   /**
-   * 隐藏上下文菜单
+   * Hide the context menu
    */
   const hideContextMenu = () => {
     contextMenuVisible.value = false;
@@ -66,12 +66,12 @@ export function useContextMenu() {
   };
 
   return {
-    // 状态
+    // State
     contextMenuVisible,
     contextMenuPosition,
     contextMenuAsset,
 
-    // 方法
+    // Methods
     showContextMenu,
     hideContextMenu
   };

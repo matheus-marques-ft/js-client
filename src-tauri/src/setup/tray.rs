@@ -6,8 +6,8 @@ use tauri::{image::Image, tray::TrayIconBuilder, App, AppHandle, Manager, Runtim
 use super::consts::menu_labels;
 use super::menu::{open_about_window, open_settings_window};
 
-/// 从字节数据创建 Tauri Image（直接使用原始图像）
-/// 仅在 macOS 平台下使用
+/// Create a Tauri Image from byte data (uses the raw image directly)
+/// Only used on macOS
 #[cfg(target_os = "macos")]
 fn create_image_from_bytes(icon_bytes: &[u8], platform: &str) -> Option<Image<'static>> {
     match image::load_from_memory(icon_bytes) {
@@ -25,7 +25,7 @@ fn create_image_from_bytes(icon_bytes: &[u8], platform: &str) -> Option<Image<'s
     }
 }
 
-/// 加载自定义托盘图标（仅 macOS）
+/// Load a custom tray icon (macOS only)
 fn load_custom_tray_icon() -> Option<Image<'static>> {
     #[cfg(target_os = "macos")]
     {
@@ -35,12 +35,12 @@ fn load_custom_tray_icon() -> Option<Image<'static>> {
 
     #[cfg(not(target_os = "macos"))]
     {
-        // 非 macOS 平台不加载自定义图标
+        // Don't load a custom icon on non-macOS platforms
         None
     }
 }
 
-/// 创建系统托盘
+/// Create the system tray
 pub fn setup_tray<R: Runtime>(menu: &Menu<R>, app: &App<R>) -> Result<(), Box<dyn Error>>
 where
     App<R>: Manager<R>,
@@ -48,7 +48,7 @@ where
 {
     let app_handle = app.app_handle().clone();
 
-    // 尝试加载自定义托盘图标，如果失败则使用默认图标
+    // Try to load a custom tray icon, falling back to the default icon on failure
     let icon = load_custom_tray_icon().unwrap_or_else(|| {
         info!("Using default window icon for tray");
         app_handle
@@ -81,7 +81,7 @@ where
 
     match tray_result {
         Ok(_tray) => {
-            // 在 macOS 上将图标设置为模板图像，以便系统可以根据菜单栏背景自动调整颜色
+            // On macOS, set the icon as a template image so the system can automatically adjust its color based on the menu bar background
             #[cfg(target_os = "macos")]
             {
                 if let Err(e) = _tray.set_icon_as_template(true) {

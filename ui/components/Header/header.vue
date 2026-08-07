@@ -5,11 +5,11 @@ const userInfoStore = useUserInfoStore();
 const { loggedIn, currentUser } = storeToRefs(userInfoStore);
 
 /**
- * @description 窗口拖拽
- * @param event 鼠标事件
+ * @description Window drag
+ * @param event mouse event
  */
 const handleWindowDrag = async (event: MouseEvent) => {
-  // 如果点击的是按钮或其他交互元素，不触发拖拽
+  // Don't trigger drag if a button or other interactive element was clicked
   const target = event.target as HTMLElement;
   if (
     target.closest("button")

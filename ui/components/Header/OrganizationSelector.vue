@@ -20,7 +20,7 @@ const organizationDropdownItems = computed<DropdownMenuItem[]>(() =>
 );
 
 /**
- * @description 切换组织
+ * @description Switch organization
  * @param org
  */
 function handleOrgChange(org: string) {

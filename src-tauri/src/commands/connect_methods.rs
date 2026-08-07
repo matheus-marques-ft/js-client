@@ -34,7 +34,7 @@ pub async fn get_connect_methods(
     let connect_methods_data = connect_methods_service.get_connect_methods().await;
 
     if !connect_methods_data.success {
-        error!("获取 ConnectMethods 数据失败");
+        error!("Failed to fetch ConnectMethods data");
 
         let _ = app.emit(
             "get-connect-methods-failure",
@@ -43,7 +43,7 @@ pub async fn get_connect_methods(
         return Ok(());
     }
 
-    info!("获取 ConnectMethods 数据成功");
+    info!("Fetched ConnectMethods data successfully");
 
     let _ = app.emit(
         "get-connect-methods-success",

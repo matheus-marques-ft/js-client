@@ -22,10 +22,10 @@ pub(crate) fn routes() -> Router<HttpServerState> {
     Router::new().route("/auth/callback", get(handle_oauth_callback))
 }
 
-/// 处理开发环境下的 OAuth HTTP 回调
-/// 函数的两个参数是 axum 的提取器写法
-/// - State(state)  从 Router 共享状态里取出 HttpServerState
-/// - Query(params) 从 URL query string 里解析出 CallbackQuery
+/// Handle the OAuth HTTP callback in the dev environment
+/// The function's two parameters are axum extractor syntax
+/// - State(state): pulls HttpServerState out of the Router's shared state
+/// - Query(params): parses CallbackQuery from the URL query string
 async fn handle_oauth_callback(
     State(state): State<HttpServerState>,
     Query(params): Query<CallbackQuery>,

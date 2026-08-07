@@ -157,7 +157,7 @@ pub fn run() {
 
             let start_urls = app.deep_link().get_current()?;
 
-            // 处理冷启动时的深度链接
+            // Handle the deep link on cold start
             if let Some(urls) = start_urls {
                 let mut did_pull_up = false;
 
@@ -165,7 +165,7 @@ pub fn run() {
                     did_pull_up |= process_deep_link(&app_handle, url.as_str());
                 }
 
-                // 深度链接启动时，调用完 pull_up 后直接退出
+                // When launched via deep link, exit right after calling pull_up
                 if did_pull_up {
                     std::process::exit(0);
                 }
@@ -180,7 +180,7 @@ pub fn run() {
                 }
             });
 
-            // 创建系统托盘
+            // Create the system tray
             setup_tray(&menu, &app)?;
             if let Err(e) = apply_window_effects(&win) {
                 error!("Failed to apply window effects: {}", e);

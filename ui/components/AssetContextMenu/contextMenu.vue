@@ -62,7 +62,7 @@ const menuItems = computed((): MenuItem[] => {
     }
   ];
 
-  // 如果有多个协议，为连接项添加子菜单
+  // If there are multiple protocols, add a submenu to the connect item
   if (uniqueProtocols.length > 1) {
     const protocolItems: MenuItem[] = uniqueProtocols.map((name: string) => ({
       label: `${t("ContextMenu.Use")} ${name.toUpperCase()}`,
@@ -84,7 +84,7 @@ const menuItems = computed((): MenuItem[] => {
 });
 
 /**
- * @description 连接
+ * @description Connect
  * @param protocol
  */
 function handleConnect(protocol?: string) {
@@ -97,7 +97,7 @@ function handleConnect(protocol?: string) {
 }
 
 /**
- * @description 编辑
+ * @description Edit
  */
 function handleEdit() {
   emits("editTrigger", props.asset);
@@ -108,7 +108,7 @@ function handleEdit() {
 }
 
 /**
- * @description 重命名
+ * @description Rename
  */
 function handleRename() {
   emits("renameTrigger", props.asset);
@@ -119,7 +119,7 @@ function handleRename() {
 }
 
 /**
- * @description 搜藏
+ * @description Favorite
  */
 function handleFavorite() {
   handleAssetFavorite(props.asset.id);
@@ -130,7 +130,7 @@ function handleFavorite() {
 }
 
 /**
- * @description 取消搜藏
+ * @description Unfavorite
  */
 function handleUnfavorite() {
   handleAssetUnfavorite(props.asset.id);
@@ -171,7 +171,7 @@ function resolveProtocols(asset: AssetItem) {
     }"
     @update:open="emits('update:visible', $event)"
   >
-    <!-- 使用一个隐藏的触发器 -->
+    <!-- Use a hidden trigger -->
     <div
       class="fixed pointer-events-none"
       :style="{

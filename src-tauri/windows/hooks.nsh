@@ -1,50 +1,50 @@
 !macro NSIS_HOOK_POSTINSTALL
-  ; 删除 Windows 对 jms 协议的用户选择缓存。
-  ; 如果旧 Electron 版本曾经被记录为默认处理程序，这个缓存可能会继续盖过新注册项。
+  ; Delete Windows' cached user choice for the jms protocol.
+  ; If an old Electron version was ever recorded as the default handler, this cache can keep overriding the new registration.
   DeleteRegKey HKCU "Software\Microsoft\Windows\Shell\Associations\UrlAssociations\jms\UserChoice"
 
-  ; 显式写入 HKCU\Software\Classes\jms。
-  ; HKCU 的协议注册优先级高于 HKLM，所以可以覆盖旧版本可能留下的机器级注册。
+  ; Explicitly write to HKCU\Software\Classes\jms.
+  ; HKCU's protocol registration takes priority over HKLM, so it can override a machine-level registration an old version may have left behind.
   WriteRegStr HKCU "Software\Classes\jms" "URL Protocol" ""
   WriteRegStr HKCU "Software\Classes\jms" "" "URL:jms"
   WriteRegStr HKCU "Software\Classes\jms" "FriendlyTypeName" "JumpServer Client URL"
 
-  ; 系统 UI 中显示的协议图标。
+  ; The protocol icon shown in the system UI.
   WriteRegStr HKCU "Software\Classes\jms\DefaultIcon" "" "$\"$INSTDIR\${MAINBINARYNAME}.exe$\",0"
 
-  ; 打开 jms:// 链接时执行的命令。%1 是浏览器或系统传进来的原始链接。
+  ; The command executed when opening a jms:// link. %1 is the raw link passed in by the browser or system.
   WriteRegStr HKCU "Software\Classes\jms\shell\open\command" "" "$\"$INSTDIR\${MAINBINARYNAME}.exe$\" $\"%1$\""
 
-  ; 通知 Windows shell 协议关联已经变化，避免系统继续使用旧缓存。
+  ; Notify the Windows shell that the protocol association has changed, to avoid the system continuing to use the old cache.
   System::Call 'shell32::SHChangeNotify(i, i, p, p) (0x08000000, 0x1000, 0, 0)'
 !macroend
 
 !macro NSIS_HOOK_PREUNINSTALL
-  ; 只在当前 HKCU jms 协议确实指向本安装目录时删除，避免误删其他应用新接管的注册。
+  ; Only delete it if the current HKCU jms protocol actually points at this install directory, to avoid accidentally removing a registration another app has since taken over.
   ReadRegStr $R7 HKCU "Software\Classes\jms\shell\open\command" ""
   StrCmp $R7 "$\"$INSTDIR\${MAINBINARYNAME}.exe$\" $\"%1$\"" 0 +2
     DeleteRegKey HKCU "Software\Classes\jms"
 
-  ; 通知 Windows shell 协议关联已经变化，避免卸载后继续使用旧缓存。
+  ; Notify the Windows shell that the protocol association has changed, to avoid it continuing to use the old cache after uninstall.
   System::Call 'shell32::SHChangeNotify(i, i, p, p) (0x08000000, 0x1000, 0, 0)'
 !macroend
 
 !macro NSIS_HOOK_POSTUNINSTALL
-  ; Tauri 的更新器会以 /UPDATE 调用旧版卸载器，此时同样会执行本 hook。
-  ; 只在用户真正卸载时删除数据，避免升级过程丢失配置、日志和插件。
+  ; Tauri's updater invokes the old uninstaller with /UPDATE, which also runs this hook.
+  ; Only delete data when the user is actually uninstalling, to avoid losing config, logs, and plugins during an upgrade.
   ${If} $UpdateMode <> 1
-    ; installMode="both" 可能会将 shell 上下文切到 all，用户数据始终属于当前用户。
+    ; installMode="both" may switch the shell context to all; user data always belongs to the current user.
     SetShellVarContext current
 
-    ; Tauri 自身的 app data/store/video 目录。
+    ; Tauri's own app data/store/video directories.
     RMDir /r "$APPDATA\${BUNDLEID}"
     RMDir /r "$LOCALAPPDATA\${BUNDLEID}"
 
-    ; JumpServer 配置、日志和用户插件使用的自定义目录。
+    ; Custom directory used for JumpServer config, logs, and user plugins.
     RMDir /r "$APPDATA\jumpserver-client"
     RMDir /r "$LOCALAPPDATA\jumpserver-client"
 
-    ; 兼容旧版本使用产品名创建的用户数据目录。
+    ; Compatibility with the user data directory created by old versions using the product name.
     RMDir /r "$APPDATA\JumpServerClient"
     RMDir /r "$LOCALAPPDATA\JumpServerClient"
   ${EndIf}

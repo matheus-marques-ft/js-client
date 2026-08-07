@@ -42,7 +42,7 @@ pub async fn get_assets(
     favorite: Option<bool>,
     request_id: String,
 ) -> Result<(), String> {
-    // 资产结果通过全局事件广播，所有成功和失败分支都必须原样回传该请求 ID。
+    // Asset results are broadcast via a global event; every success and failure branch must pass this request ID back unchanged.
     let (context, asset_service) = match load_asset_service(&app, &session).await {
         Ok(result) => result,
         Err(error) => {
@@ -62,7 +62,7 @@ pub async fn get_assets(
         .await;
 
     if !assets_data.success {
-        error!("获取 Asset 数据失败");
+        error!("Failed to fetch Asset data");
         let _ = app.emit(
             "get-asset-failure",
             json!({ "status": assets_data.status, "request_id": request_id }),
@@ -82,7 +82,7 @@ pub async fn get_assets(
             );
         }
         Err(error) => {
-            error!("解析资产列表 JSON 失败: {}", error);
+            error!("Failed to parse asset list JSON: {}", error);
             let _ = app.emit(
                 "get-asset-failure",
                 json!({ "status": assets_data.status, "request_id": request_id }),
@@ -94,12 +94,12 @@ pub async fn get_assets(
     let favorite_assets_data = asset_service.get_favorite_assets().await;
 
     if !favorite_assets_data.success {
-        error!("获取 Favorite Assets 数据失败");
+        error!("Failed to fetch Favorite Assets data");
         return Ok(());
     }
 
     info!(
-        "获取 Favorite Assets 数据成功，返回数据: {}",
+        "Fetched Favorite Assets data successfully, returned data: {}",
         favorite_assets_data.data
     );
 

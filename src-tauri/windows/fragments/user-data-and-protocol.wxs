@@ -2,25 +2,27 @@
 <Wix xmlns="http://schemas.microsoft.com/wix/2006/wi">
   <Fragment>
     <!--
-      安装时写入当前用户级别的 jms:// 协议注册。
+      Writes the current-user-level jms:// protocol registration at install time.
 
-      Windows 会把 HKLM\Software\Classes 和 HKCU\Software\Classes 合并成 HKCR，
-      且 HKCU 的同名协议优先级更高。这里显式写 HKCU，是为了让当前 Tauri
-      版本覆盖旧 Electron 版本可能留下的机器级或用户级协议注册。
+      Windows merges HKLM\Software\Classes and HKCU\Software\Classes into HKCR,
+      and HKCU's registration for the same protocol takes priority. We write to
+      HKCU explicitly here so the current Tauri version overrides any
+      machine-level or user-level protocol registration an old Electron version
+      may have left behind.
     -->
     <DirectoryRef Id="TARGETDIR">
       <Component Id="JumpServerClientUserProtocol" Guid="{481BCBD7-8E1F-41E1-818B-FE0C2C15500E}">
-        <!-- jms 协议本体；URL Protocol 这个空值表示它是 URL scheme，不是普通文件类型。 -->
+        <!-- The jms protocol itself; the empty "URL Protocol" value marks it as a URL scheme, not a regular file type. -->
         <RegistryKey Root="HKCU" Key="Software\Classes\jms" Action="createAndRemoveOnUninstall">
           <RegistryValue Type="string" Value="URL:jms" KeyPath="yes" />
           <RegistryValue Type="string" Name="URL Protocol" Value="" />
           <RegistryValue Type="string" Name="FriendlyTypeName" Value="JumpServer Client URL" />
         </RegistryKey>
-        <!-- 协议在系统 UI 中显示的图标。 -->
+        <!-- The protocol's icon shown in the system UI. -->
         <RegistryKey Root="HKCU" Key="Software\Classes\jms\DefaultIcon" Action="createAndRemoveOnUninstall">
           <RegistryValue Type="string" Value="&quot;[INSTALLDIR]JumpServerClient.exe&quot;,0" />
         </RegistryKey>
-        <!-- 浏览器或系统打开 jms:// 链接时实际执行的命令。%1 是原始链接参数。 -->
+        <!-- The command actually executed when the browser or system opens a jms:// link. %1 is the raw link argument. -->
         <RegistryKey Root="HKCU" Key="Software\Classes\jms\shell\open\command" Action="createAndRemoveOnUninstall">
           <RegistryValue Type="string" Value="&quot;[INSTALLDIR]JumpServerClient.exe&quot; &quot;%1&quot;" />
         </RegistryKey>
@@ -28,11 +30,12 @@
     </DirectoryRef>
 
     <!--
-      安装后删除 Windows 为协议关联缓存的 UserChoice。
+      Deletes Windows' cached UserChoice for the protocol association after install.
 
-      如果旧 Electron 版本曾被用户或系统记录为 jms 的默认处理程序，UserChoice
-      可能会继续盖过新写入的协议项。这里删除它，让上面的 HKCU\Software\Classes\jms
-      成为当前用户的有效处理程序。
+      If an old Electron version was ever recorded by the user or system as jms's
+      default handler, UserChoice can keep overriding the newly written protocol
+      entry. Deleting it here lets the HKCU\Software\Classes\jms entry above
+      become the effective handler for the current user.
     -->
     <CustomAction
       Id="PromoteJumpServerClientUserProtocol"
@@ -43,9 +46,10 @@
       Return="ignore"
     />
     <!--
-      卸载时清理本项目产生的用户数据目录。
+      Cleans up this project's user data directories on uninstall.
 
-      只在真正卸载时运行；升级时不会运行，避免用户配置在版本升级过程中被误删。
+      Only runs on an actual uninstall; it does not run during an upgrade, to
+      avoid accidentally deleting user config during a version upgrade.
     -->
     <CustomAction
       Id="CleanupJumpServerClientUserData"
@@ -56,9 +60,9 @@
       Return="ignore"
     />
     <InstallExecuteSequence>
-      <!-- NOT REMOVE: 安装、修复、升级时执行；卸载时不执行。 -->
+      <!-- NOT REMOVE: runs on install, repair, and upgrade; not on uninstall. -->
       <Custom Action="PromoteJumpServerClientUserProtocol" After="WriteRegistryValues">NOT REMOVE</Custom>
-      <!-- REMOVE="ALL" AND NOT UPGRADINGPRODUCTCODE: 只在真正卸载时清理，major upgrade 不清理。 -->
+      <!-- REMOVE="ALL" AND NOT UPGRADINGPRODUCTCODE: only cleans up on an actual uninstall, not on a major upgrade. -->
       <Custom Action="CleanupJumpServerClientUserData" After="RemoveFiles">REMOVE="ALL" AND NOT UPGRADINGPRODUCTCODE</Custom>
     </InstallExecuteSequence>
   </Fragment>

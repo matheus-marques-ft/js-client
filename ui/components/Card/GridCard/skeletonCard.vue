@@ -22,10 +22,10 @@ withDefaults(
     <section class="w-full p-4">
       <div class="flex items-center justify-between w-full">
         <div class="flex items-center gap-3 flex-1 min-w-0">
-          <!-- 图标骨架 -->
+          <!-- Icon skeleton -->
           <USkeleton class="h-8 w-8 rounded-md" />
 
-          <!-- 文本信息骨架 -->
+          <!-- Text info skeleton -->
           <div class="flex-1 min-w-0 overflow-hidden w-[120px]">
             <div class="text-xs-plus font-bold">
               <USkeleton class="h-4 w-20" />
@@ -37,7 +37,7 @@ withDefaults(
           </div>
         </div>
 
-        <!-- 按钮骨架 -->
+        <!-- Button skeleton -->
         <div class="shrink-0 ml-2">
           <USkeleton class="h-6 w-16 rounded-md" />
         </div>

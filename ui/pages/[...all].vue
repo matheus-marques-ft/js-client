@@ -1,5 +1,5 @@
 <script lang="ts" setup>
-// 获取当前路由路径
+// Get the current route path
 const route = useRoute();
 const requestedPath = route.path;
 </script>

@@ -169,7 +169,7 @@ jmstool ssh root@127.0.0.1 -p 2222
 				case <-sigChan:
 					return
 
-				// 阻塞读取
+				// Blocking read
 				case sigwinch := <-sigwinchCh:
 					if sigwinch == nil {
 						return

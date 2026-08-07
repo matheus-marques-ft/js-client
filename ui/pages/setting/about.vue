@@ -15,7 +15,7 @@ const links = [
   {
     label: "GitHub",
     icon: "line-md:github",
-    to: "https://github.com/jumpserver/jumpserver"
+    to: "https://github.com/matheus-marques-ft/js-client"
   },
   {
     label: "Discord",
@@ -30,7 +30,7 @@ onMounted(async () => {
   } catch {}
 
   try {
-    // 运行时读取 Tauri productName，避免只依赖 VITE_APP_NAME 导致定制构建的 About 页面显示为空。
+    // Read the Tauri productName at runtime, to avoid relying only on VITE_APP_NAME and ending up with a blank About page on custom builds.
     const runtimeAppName = (await useTauriAppGetName()).trim();
     if (runtimeAppName) {
       appName.value = normalizeAppName(runtimeAppName);

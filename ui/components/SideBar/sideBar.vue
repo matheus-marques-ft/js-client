@@ -74,16 +74,16 @@ const debouncedSidebarSearch = useDebounceFn(emitSearch, 200);
 </script>
 
 <template>
-  <!-- backdrop-blur-lg 如果加上这个属性会导致在拖动窗口的时候，左侧背景一直在变化 -->
+  <!-- backdrop-blur-lg: adding this causes the left background to keep shifting while dragging the window -->
   <div
     class="flex flex-col bg-white/30 dark:bg-zinc-900/20 backdrop-saturate-150 supports-backdrop-filter:dark:bg-zinc-900/15 border-r border-white/30 dark:border-white/10 shadow-sm"
     :style="{
       width: collapse ? '75px' : '220px'
     }"
   >
-    <!-- 顶部区域：折叠按钮和搜索框 -->
+    <!-- Top area: collapse button and search box -->
     <div class="flex flex-col w-full">
-      <!-- 折叠按钮 -->
+      <!-- Collapse button -->
       <div
         class="flex items-center px-3 h-10 w-full"
         :class="
@@ -110,7 +110,7 @@ const debouncedSidebarSearch = useDebounceFn(emitSearch, 200);
         />
       </div>
 
-      <!-- 搜索框区域 -->
+      <!-- Search box area -->
       <div v-show="!collapse" class="px-3 py-2">
         <UInput
           v-model="sidebarSearch"
@@ -203,7 +203,7 @@ const debouncedSidebarSearch = useDebounceFn(emitSearch, 200);
   }
 }
 
-/* 配置页左侧为纯色背景，需要比透明侧边栏更明显的高亮 */
+/* The settings page has a solid-color left background, which needs a more visible highlight than the transparent sidebar */
 .dark .setting-menu .menu-item {
   &[data-active]::before {
     background-color: rgba(255, 255, 255, 0.16);

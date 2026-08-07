@@ -5,7 +5,7 @@
 **A modern, cross-platform desktop client for JumpServer built with Tauri**
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Platform](https://img.shields.io/badge/platform-macOS%20%7C%20Windows%20%7C%20Linux-lightgrey)](https://github.com/jumpserver/clients)
+[![Platform](https://img.shields.io/badge/platform-macOS%20%7C%20Windows%20%7C%20Linux-lightgrey)](https://github.com/matheus-marques-ft/js-client)
 [![Tauri](https://img.shields.io/badge/Tauri-2.9.0-FFC131?logo=tauri&logoColor=white)](https://tauri.app/)
 [![Vue](https://img.shields.io/badge/Vue-3.5-4FC08D?logo=vue.js&logoColor=white)](https://vuejs.org/)
 
@@ -61,14 +61,14 @@
 
 ### macOS
 
-1. Download the `.dmg` file from the [Releases](https://github.com/jumpserver/clients/releases) page
+1. Download the `.dmg` file from the [Releases](https://github.com/matheus-marques-ft/js-client/releases) page
 2. Open the downloaded `.dmg` file
 3. Drag `JumpServer.app` to your `Applications` folder
 4. Double-click `JumpServer.app` to launch (this will register the custom protocol)
 
 ### Windows
 
-1. Download the `.msi` or `.exe` installer from the [Releases](https://github.com/jumpserver/clients/releases) page
+1. Download the `.msi` or `.exe` installer from the [Releases](https://github.com/matheus-marques-ft/js-client/releases) page
 2. Double-click the installer file
 3. Follow the installation wizard (may take 10-15 seconds)
 4. Launch JumpServer Client from the Start menu
@@ -79,7 +79,7 @@
 
 ```bash
 # Download the .deb package
-wget https://github.com/jumpserver/clients/releases/latest/download/jumpserver-client_*.deb
+wget https://github.com/matheus-marques-ft/js-client/releases/latest/download/jumpserver-client_*.deb
 
 # Install using dpkg
 sudo dpkg -i jumpserver-client_*.deb
@@ -92,7 +92,7 @@ sudo apt install ./jumpserver-client_*.deb
 
 ```bash
 # Download the .rpm package
-wget https://github.com/jumpserver/clients/releases/latest/download/jumpserver-client_*.rpm
+wget https://github.com/matheus-marques-ft/js-client/releases/latest/download/jumpserver-client_*.rpm
 
 # Install using rpm
 sudo rpm -i jumpserver-client_*.rpm
@@ -122,7 +122,7 @@ sudo dnf install ./jumpserver-client_*.rpm
   - Oracle
   - SQL Server
   - ClickHouse
-  - 达梦 (DM)
+  - Dameng (DM)
 
 ### Managing Assets
 
@@ -147,8 +147,8 @@ sudo dnf install ./jumpserver-client_*.rpm
 
 ```bash
 # Clone the repository
-git clone https://github.com/jumpserver/clients.git
-cd clients
+git clone https://github.com/matheus-marques-ft/js-client.git
+cd js-client
 
 # Install dependencies
 pnpm install
@@ -172,7 +172,7 @@ pnpm tauri:build --target x86_64-unknown-linux-gnu
 ### Project Structure
 
 ```
-clients/
+js-client/
 ├── ui/                    # Frontend (Vue/Nuxt)
 │   ├── components/        # Vue components
 │   ├── pages/            # Application pages
@@ -237,8 +237,8 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ## 📮 Support
 
-- **Issues**: [GitHub Issues](https://github.com/jumpserver/clients/issues)
-- **Discussions**: [GitHub Discussions](https://github.com/jumpserver/clients/discussions)
+- **Issues**: [GitHub Issues](https://github.com/matheus-marques-ft/js-client/issues)
+- **Discussions**: [GitHub Discussions](https://github.com/matheus-marques-ft/js-client/discussions)
 - **JumpServer Community**: [JumpServer Community](https://github.com/jumpserver/jumpserver)
 
 ---
@@ -247,6 +247,6 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 Made with ❤️ by the JumpServer Team
 
-[⭐ Star us on GitHub](https://github.com/jumpserver/clients) | [📖 Documentation](https://docs.jumpserver.org/) | [🐛 Report Bug](https://github.com/jumpserver/clients/issues)
+[⭐ Star us on GitHub](https://github.com/matheus-marques-ft/js-client) | [📖 Documentation](https://docs.jumpserver.org/) | [🐛 Report Bug](https://github.com/matheus-marques-ft/js-client/issues)
 
 </div>

@@ -5,7 +5,7 @@
   "version": "1.0.0",
   "min_client_version": "4.0.0",
   "author": "JumpServer",
-  "homepage": "https://github.com/jumpserver/clients",
+  "homepage": "https://github.com/matheus-marques-ft/js-client",
   "download_url": "",
   "category": "databases",
   "protocols": [

@@ -179,7 +179,7 @@ export const useSettingManager = () => {
   };
 
   const setAppConfig = (config: AppConfigType | undefined) => {
-    // 确保从 store 加载完成，避免默认值覆盖刚写入的配置
+    // Make sure loading from the store has finished, to avoid default values overwriting a config that was just written
     ensureHydration()
       .then(() => {
         state.appConfig = config ?? null;

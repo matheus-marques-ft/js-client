@@ -10,7 +10,7 @@ use tauri::path::BaseDirectory;
 use tauri::AppHandle;
 use tauri::Manager;
 
-// 映射平台/架构到二进制所在子目录
+// Map platform/architecture to the subdirectory holding the binary
 fn platform_subdir() -> Option<&'static str> {
     let os = env::consts::OS; // "linux" | "macos" | "windows"
     let arch = env::consts::ARCH; // "x86_64" | "aarch64" | "arm" | ...
@@ -31,7 +31,7 @@ fn platform_subdir() -> Option<&'static str> {
     }
 }
 
-// Windows 追加 .exe，其它平台不变
+// Append .exe on Windows; unchanged on other platforms
 fn executable_name() -> &'static str {
     if env::consts::OS == "windows" {
         "JumpServerClient.exe"
@@ -40,9 +40,9 @@ fn executable_name() -> &'static str {
     }
 }
 
-// 生成可能的可执行路径候选：
-// - 开发模式：相对项目根的 bin/<subdir>/JumpServerClient[.exe]
-// - 生产模式：打包后可执行同级，或 macOS 的 Resources 目录
+// Generate candidate executable paths:
+// - Dev mode: bin/<subdir>/JumpServerClient[.exe] relative to the project root
+// - Production mode: alongside the packaged executable, or in macOS's Resources directory
 fn append_resource_candidates(app: &AppHandle, candidates: &mut Vec<PathBuf>) {
     let Some(subdir) = platform_subdir() else {
         return;
@@ -71,7 +71,7 @@ fn candidate_paths(app: &AppHandle, is_dev: bool) -> Vec<PathBuf> {
     let exe_name = executable_name();
 
     if is_dev {
-        // 开发模式：尝试 ./、../、../../ 三个相对位置，方便在不同工作目录下运行
+        // Dev mode: try the ./, ../, and ../../ relative locations, to work from different working directories
         let cwd = env::current_dir().unwrap_or_else(|_| PathBuf::from("."));
         let bases = [cwd.clone(), cwd.join(".."), cwd.join("../..")];
         for base in bases {
@@ -95,8 +95,8 @@ fn candidate_paths(app: &AppHandle, is_dev: bool) -> Vec<PathBuf> {
                         .join(exe_name),
                 );
                 candidates.push(base.join("resources").join("bin").join(exe_name));
-                // macOS 打包：App.app/Contents/MacOS/ 下为运行目录
-                // 资源常在 App.app/Contents/Resources/
+                // macOS packaging: the run directory is under App.app/Contents/MacOS/
+                // Resources are usually in App.app/Contents/Resources/
                 if cfg!(target_os = "macos") {
                     if let Some(contents) = base.parent() {
                         let resources = contents.join("Resources").join("resources").join("bin");
@@ -125,8 +125,8 @@ fn canonicalize_if_exists(path: &PathBuf) -> Option<PathBuf> {
 }
 
 #[tauri::command]
-/// 启动本地 JumpServerClient 可执行文件，并传入 URL 参数
-/// 前端：invoke('pull_up', { url })
+/// Launch the local JumpServerClient executable, passing the URL parameter
+/// Frontend: invoke('pull_up', { url })
 pub fn pull_up(app: AppHandle, url: String) -> Result<(), String> {
     if url.trim().is_empty() {
         let err_msg = "pull_up called with empty url";
@@ -134,7 +134,7 @@ pub fn pull_up(app: AppHandle, url: String) -> Result<(), String> {
         return Err(err_msg.to_string());
     }
 
-    // 对应 JS: is.dev && !process.env.IS_TEST
+    // Corresponds to JS: is.dev && !process.env.IS_TEST
     let is_test = env::var("IS_TEST")
         .map(|v| v == "1" || v.eq_ignore_ascii_case("true"))
         .unwrap_or(false);
@@ -162,7 +162,7 @@ pub fn pull_up(app: AppHandle, url: String) -> Result<(), String> {
 
     info!("Launching client: {:?} {}", exe_path, url);
 
-    // 使用管道捕获 stderr，以便检测子进程的错误输出
+    // Use a pipe to capture stderr, to detect error output from the child process
     let mut child = Command::new(&exe_path)
         .arg(url)
         .stdin(Stdio::null())
@@ -175,17 +175,17 @@ pub fn pull_up(app: AppHandle, url: String) -> Result<(), String> {
             err_msg
         })?;
 
-    // 获取 stderr 的读取器
+    // Get the stderr reader
     let stderr = child.stderr.take().ok_or_else(|| {
         let err_msg = "Failed to capture stderr from client process";
         error!("{}", err_msg);
         err_msg.to_string()
     })?;
 
-    // 使用通道来在后台线程和主线程之间通信
+    // Use a channel to communicate between the background thread and the main thread
     let (tx, rx) = std::sync::mpsc::channel::<String>();
 
-    // 在后台线程中读取 stderr，检查是否有错误输出
+    // Read stderr on a background thread, checking for error output
     thread::spawn(move || {
         let reader = BufReader::new(stderr);
 
@@ -193,15 +193,15 @@ pub fn pull_up(app: AppHandle, url: String) -> Result<(), String> {
             match line {
                 Ok(line) => {
                     let lower = line.to_lowercase();
-                    // 检查是否是错误行（Go 客户端错误通常以 "Error:" 开头）
+                    // Check whether this is an error line (Go client errors usually start with "Error:")
                     if lower.contains("error:") {
                         error!("Client stderr: {}", line);
-                        // 立即发送错误信号
+                        // Send the error signal immediately
                         let _ = tx.send(line.clone());
                     } else if !line.trim().is_empty() {
-                        // 记录所有非空输出，可能是警告或错误
+                        // Log all non-empty output, which may be a warning or error
                         error!("Client stderr: {}", line);
-                        // 如果包含常见错误关键词，也收集起来
+                        // Also collect it if it contains common error keywords
                         if lower.contains("not found")
                             || lower.contains("not configured")
                             || lower.contains("failed")
@@ -219,18 +219,18 @@ pub fn pull_up(app: AppHandle, url: String) -> Result<(), String> {
         }
     });
 
-    // 等待并循环检查错误输出，最多等待2秒
+    // Wait and loop-check for error output, up to 2 seconds
     for _ in 0..20 {
-        // 检查是否有错误消息
+        // Check for an error message
         if let Ok(error_msg) = rx.try_recv() {
             let err_msg = format!("Client error: {}", error_msg);
             error!("{}", err_msg);
             return Err(err_msg);
         }
 
-        // 检查进程是否已经退出（可能因为错误而退出）
+        // Check whether the process has already exited (possibly due to an error)
         if let Ok(Some(status)) = child.try_wait() {
-            // 进程已退出：等待一小段时间把 stderr reader 的最后一行收进来（避免进程快速退出导致漏报）
+            // Process has exited: wait a short moment to pick up the stderr reader's last line (avoids missing it if the process exits quickly)
             match rx.recv_timeout(Duration::from_millis(300)) {
                 Ok(error_msg) => {
                     let err_msg = format!("Client error: {}", error_msg);
@@ -247,22 +247,22 @@ pub fn pull_up(app: AppHandle, url: String) -> Result<(), String> {
                 return Err(err_msg);
             }
 
-            // 进程成功退出，这是正常的（某些客户端可能立即退出）
+            // The process exited successfully; this is normal (some clients may exit immediately)
             return Ok(());
         }
 
         thread::sleep(Duration::from_millis(100));
     }
 
-    // 最后再检查一次是否有错误消息（防止在循环结束后才收到错误）
+    // Check once more for an error message (in case it arrived just after the loop ended)
     if let Ok(error_msg) = rx.try_recv() {
         let err_msg = format!("Client error: {}", error_msg);
         error!("{}", err_msg);
         return Err(err_msg);
     }
 
-    // 如果进程仍在运行，这是正常的，让它在后台继续运行
-    // 后续的错误会通过事件发送给前端
+    // If the process is still running, that's normal — let it keep running in the background
+    // Any subsequent errors are sent to the frontend via an event
 
     Ok(())
 }

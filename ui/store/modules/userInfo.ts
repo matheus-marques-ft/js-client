@@ -7,7 +7,7 @@ export type SiteUserData = UserData & {
   connectionInfoMap?: Record<string, ConnectionInfo>
 };
 
-// 其实应该叫做 accountInfoStore 比较好
+// This would really be better named accountInfoStore
 export const useUserInfoStore = defineStore(
   "userInfo",
   () => {
@@ -24,7 +24,7 @@ export const useUserInfoStore = defineStore(
     const orgId = computed(() => currentUser.value?.org?.id || "");
 
     /**
-     * @description 将当前前端会话同步给 Rust 请求层
+     * @description Sync the current frontend session to the Rust request layer
      * @param site
      * @param userData
      */
@@ -50,7 +50,7 @@ export const useUserInfoStore = defineStore(
     );
 
     /**
-     * @description 设置用户登录状态
+     * @description Set the user's login state
      * @param l
      */
     const setUserLoggedIn = (l: boolean) => {
@@ -58,7 +58,7 @@ export const useUserInfoStore = defineStore(
     };
 
     /**
-     * @description 获取用户数据
+     * @description Get user data
      * @param site
      */
     const getUserData = (site: string) => {
@@ -70,7 +70,7 @@ export const useUserInfoStore = defineStore(
     };
 
     /**
-     * @description 设置用户数据
+     * @description Set user data
      * @param site
      * @param userData
      */
@@ -82,11 +82,11 @@ export const useUserInfoStore = defineStore(
       currentSite.value = site;
       syncApiSession(site, next);
 
-      // 初始化当前站点连接信息映射以及 RDP 客户端选项
+      // Initialize the current site's connection info map and RDP client options
       currentConnectionInfoMap.value = next.connectionInfoMap || {};
       currentRdpClientOption.value = next.rdpClientOption || {};
 
-      // 登录后获取连接方法
+      // Fetch connect methods after login
       const { fetchConnectMethods } = useConnectMethods();
       nextTick(async () => {
         try {
@@ -98,11 +98,11 @@ export const useUserInfoStore = defineStore(
     };
 
     /**
-     * @description 删除用户数据
+     * @description Delete user data
      * @param site
      */
     const deleteUserData = (site: string) => {
-      // 退出当前站点时立即请求清理其 Cookie
+      // Immediately request cleanup of its cookie when logging out of the current site
       useTauriCoreInvoke("logout", {
         name: "main",
         site
@@ -114,7 +114,7 @@ export const useUserInfoStore = defineStore(
 
       delete userMap.value[site];
 
-      // 如果还有用户，则切换到下一个用户
+      // Switch to the next user if any remain
       if (hasUser.value) {
         const nextUser = Object.values(userMap.value)[0] as SiteUserData | undefined;
 
@@ -124,7 +124,7 @@ export const useUserInfoStore = defineStore(
           currentSite.value = nextUser.site;
           syncApiSession(nextUser.site, nextUser);
 
-          // 同步连接信息映射以及 RDP 客户端选项
+          // Sync the connection info map and RDP client options
           currentConnectionInfoMap.value = nextUser.connectionInfoMap || {};
           currentRdpClientOption.value = nextUser.rdpClientOption || {};
           currentOrganizations.value = nextUser.availableOrgs || [];
@@ -152,13 +152,13 @@ export const useUserInfoStore = defineStore(
     };
 
     /**
-     * @description 设置当前站点
+     * @description Set the current site
      * @param site
      */
     const setCurrentSite = (site: string) => {
       currentSite.value = site;
 
-      // 当切换站点时，同时更新当前组织列表
+      // Also update the current organization list when switching sites
       const userData = getUserData(site);
 
       if (userData) {
@@ -167,7 +167,7 @@ export const useUserInfoStore = defineStore(
         currentOrganizations.value = (userData as SiteUserData).availableOrgs || [];
         syncApiSession(site, userData);
 
-        // 同步当前站点的连接信息映射以及 RDP 客户端选项
+        // Sync the current site's connection info map and RDP client options
         currentConnectionInfoMap.value = (userData as SiteUserData).connectionInfoMap || {};
         currentRdpClientOption.value = (userData as SiteUserData).rdpClientOption || {};
       } else {
@@ -177,7 +177,7 @@ export const useUserInfoStore = defineStore(
     };
 
     /**
-     * @description 设置当前组织列表
+     * @description Set the current organization list
      * @param orgs
      */
     const setOrganizations = (orgs: PermOrgItem[]) => {
@@ -195,7 +195,7 @@ export const useUserInfoStore = defineStore(
     };
 
     /**
-     * @description 设置当前组织
+     * @description Set the current organization
      * @param org
      */
     const setCurrentOrg = (org: PermOrgItem) => {
@@ -220,7 +220,7 @@ export const useUserInfoStore = defineStore(
     };
 
     /**
-     * @description 设置用户连接信息
+     * @description Set the user's connection info
      * @param connectionInfo
      */
     const setConnectionInfoToUser = (connectionInfo: ConnectionInfo) => {
@@ -232,8 +232,8 @@ export const useUserInfoStore = defineStore(
     };
 
     /**
-     * @description 获取资产连接信息
-     * @param assetId 资产 ID
+     * @description Get an asset's connection info
+     * @param assetId asset ID
      */
     const getConnectionInfoForAsset = (assetId: string) => {
       if (!currentSite.value) return null;
@@ -243,7 +243,7 @@ export const useUserInfoStore = defineStore(
     };
 
     /**
-     * @description 设置资产连接信息
+     * @description Set an asset's connection info
      * @param assetId
      * @param connectionInfo
      */
@@ -276,13 +276,13 @@ export const useUserInfoStore = defineStore(
     };
 
     /**
-     * @description 设置 RDP 客户端选项
+     * @description Set the RDP client option
      * @param rdpClientOption
      */
     const setRdpClientOption = (rdpClientOption: RdpGraphics) => {
       currentRdpClientOption.value = rdpClientOption;
 
-      // 同步到当前站点的用户数据中，便于持久化/切换站点后恢复
+      // Sync into the current site's user data, so it persists / restores after switching sites
       if (currentSite.value && userMap.value[currentSite.value]) {
         const site = currentSite.value;
         const siteData = userMap.value[site] as SiteUserData;

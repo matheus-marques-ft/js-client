@@ -3,12 +3,12 @@ import type { AssetItem } from "~/types/index";
 export function useAssetManagement() {
   const { getAssetDetail } = useAssetAction();
 
-  // 选中的卡片状态
+  // Selected card state
   const selectedCardIndex = ref<number | null>(null);
   const currentSelectedCardInfo = ref<AssetItem | null>(null);
 
   /**
-   * 处理卡片点击
+   * Handle card click
    */
   const handleCardClick = (index: number, e: MouseEvent) => {
     e.stopPropagation();
@@ -16,32 +16,32 @@ export function useAssetManagement() {
   };
 
   /**
-   * 清除选中卡片
+   * Clear the selected card
    */
   const clearSelectedCard = () => {
     selectedCardIndex.value = null;
   };
 
   /**
-   * 设置当前选中的资产信息
+   * Set the currently selected asset info
    */
   const setCurrentAsset = (asset: AssetItem) => {
     currentSelectedCardInfo.value = asset;
   };
 
   /**
-   * 处理资产详情获取
+   * Handle fetching asset details
    */
   const handleAssetDetail = (assetId: string) => {
     getAssetDetail(assetId);
   };
 
   return {
-    // 状态
+    // State
     selectedCardIndex,
     currentSelectedCardInfo,
 
-    // 方法
+    // Methods
     handleCardClick,
     clearSelectedCard,
     setCurrentAsset,

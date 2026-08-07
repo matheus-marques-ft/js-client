@@ -120,9 +120,9 @@ onMounted(() => {
     >
       <template #default>
         <!--
-          整条标题栏底层是一个满宽度的 data-tauri-drag-region
-          上层可见内容默认 pointer-events-none，所以标题区域和空白区域都会把事件透传给底层拖拽层
-          右侧窗口按钮区域单独恢复 pointer-events-auto，并且整块都标记 data-tauri-drag-region="false"，确保按钮区域不会触发拖拽事件
+          The entire title bar is backed by a full-width data-tauri-drag-region.
+          The visible content on top defaults to pointer-events-none, so both the title area and empty space pass events through to the drag layer underneath.
+          The window button area on the right restores pointer-events-auto on its own, and the whole block is marked data-tauri-drag-region="false", to make sure the button area never triggers a drag.
         -->
         <div class="header-bg relative h-10 px-4">
           <div data-tauri-drag-region class="absolute inset-0 z-0" />

@@ -100,12 +100,12 @@ watch(
 const protocolItems = computed(() => props.protocols.map((p: PermedProtocol) => p.name));
 
 const accountItems = computed(() => {
-  // web 类型的资产需要保留匿名账号，其它类型不展示 @ANON
+  // Web-type assets need to keep the anonymous account; other types don't show @ANON
   const filteredAnonymous = props.accounts.filter((a: PermedAccount) => {
     return a.alias !== "@ANON" || props.assetType?.toLowerCase() === "web";
   });
 
-  // 账号分组
+  // Account grouping
   const hosted = filteredAnonymous
     .filter((acc: PermedAccount) => !acc.alias.includes("@"))
     .map((acc: PermedAccount) => {

@@ -1,10 +1,10 @@
-# SidebarFlipIcon 组件
+# SidebarFlipIcon Component
 
-这是一个封装了 sidebar-flip SVG 图标的 Vue 组件，可以在 Nuxt 项目中直接使用。
+This is a Vue component wrapping the sidebar-flip SVG icon, ready to use directly in a Nuxt project.
 
-## 使用方法
+## Usage
 
-### 1. 导入组件
+### 1. Import the component
 
 ```vue
 <script setup lang="ts">
@@ -12,20 +12,20 @@ import SidebarFlipIcon from "~/icons/SidebarFlipIcon.vue";
 </script>
 ```
 
-### 2. 在模板中使用
+### 2. Use it in the template
 
 ```vue
 <template>
-  <!-- 基本使用 -->
+  <!-- Basic usage -->
   <SidebarFlipIcon />
 
-  <!-- 自定义尺寸 -->
+  <!-- Custom size -->
   <SidebarFlipIcon size="32" />
 
-  <!-- 自定义样式 -->
+  <!-- Custom style -->
   <SidebarFlipIcon size="24" class="text-blue-500" />
 
-  <!-- 不同尺寸示例 -->
+  <!-- Different size examples -->
   <SidebarFlipIcon size="16" class="text-gray-500" />
   <SidebarFlipIcon size="24" class="text-blue-500" />
   <SidebarFlipIcon size="32" class="text-green-500" />
@@ -35,19 +35,19 @@ import SidebarFlipIcon from "~/icons/SidebarFlipIcon.vue";
 
 ## Props
 
-| 属性  | 类型             | 默认值 | 描述            |
-| ----- | ---------------- | ------ | --------------- |
-| size  | string \| number | '24'   | 图标尺寸        |
-| class | string           | ''     | 自定义 CSS 类名 |
+| Prop  | Type             | Default | Description         |
+| ----- | ---------------- | ------- | -------------------- |
+| size  | string \| number | '24'    | Icon size            |
+| class | string           | ''      | Custom CSS class name |
 
-## 特性
+## Features
 
-- ✅ 支持自定义尺寸
-- ✅ 支持自定义样式（通过 class 属性）
-- ✅ 使用 `currentColor` 填充，继承父元素的文字颜色
-- ✅ TypeScript 支持
-- ✅ 响应式设计
+- ✅ Supports custom sizing
+- ✅ Supports custom styling (via the class prop)
+- ✅ Filled with `currentColor`, inheriting the parent element's text color
+- ✅ TypeScript support
+- ✅ Responsive design
 
-## 测试页面
+## Test page
 
-访问 `/test-icon` 页面可以查看图标的各种使用示例。
+Visit the `/test-icon` page to see various usage examples of the icon.

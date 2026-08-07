@@ -40,7 +40,7 @@
   @apply text-ellipsis overflow-hidden whitespace-nowrap;
 }
 
-/* 全局按钮样式 */
+/* Global button style */
 .btn-common {
   @apply rounded-lg transition-colors duration-200;
 }
@@ -51,7 +51,7 @@
 .dark .btn-common:hover {
 }
 
-/* App Store 风格按钮 */
+/* App Store-style button */
 .btn-connect {
   @apply font-bold rounded-lg text-xs transition-all duration-200;
 }
@@ -64,14 +64,14 @@
   @apply bg-gray-600 hover:bg-gray-700;
 } */
 
-/* Header 平台特定颜色 */
+/* Header platform-specific colors */
 .header-bg {
-  /* 默认颜色 */
+  /* Default color */
   --header-bg-light: rgb(231, 231, 231);
   --header-bg-dark: #333334;
 }
 
-/* Windows 平台 */
+/* Windows platform */
 .platform-windows .header-bg {
   --header-bg-light: rgb(248, 248, 248);
   --header-bg-dark: #2c2c2e;
@@ -81,19 +81,19 @@
   @apply border-gray-300 border-1 overflow-hidden shadow-xl shadow-gray-500;
 }
 
-/* macOS 平台 */
+/* macOS platform */
 .platform-darwin .header-bg {
   --header-bg-light: rgba(255, 255, 255, 0.8);
   --header-bg-dark: #1e1e1e;
 }
 
-/* Linux 平台 */
+/* Linux platform */
 .platform-linux .header-bg {
   --header-bg-light: rgb(240, 240, 240);
   --header-bg-dark: #2d2d30;
 }
 
-/* 主题颜色应用 */
+/* Theme color application */
 .light .header-bg {
   background-color: var(--header-bg-light);
 }

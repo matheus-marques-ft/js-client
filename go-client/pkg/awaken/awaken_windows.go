@@ -168,7 +168,7 @@ func handleVNC(r *Rouse, cfg *config.AppConfig) (*exec.Cmd, error) {
 	if len(appItem.AutoIt) == 0 {
 		commands := getCommandFromArgs(connectMap, appItem.ArgFormat)
 		cmd := exec.Command(appItem.Path, strings.Split(commands, " ")...)
-		// 设置环境变量（只对这个子进程有效）
+		// Set environment variables (only effective for this child process)
 		cmd.Env = append(os.Environ(),
 			"VNC_USERNAME="+r.getUserName(),
 			"VNC_PASSWORD="+r.Value,
@@ -254,7 +254,7 @@ func handleSSH(r *Rouse, cfg *config.AppConfig) (*exec.Cmd, error) {
 	if appItem == nil {
 		return nil, nil
 	}
-	// telnet 协议使用 ssh 的配置参数格式
+	// The telnet protocol uses ssh's config parameter format
 	protocol := r.Protocol
 	if protocol == "telnet" {
 		protocol = "ssh"

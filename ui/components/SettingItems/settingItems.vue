@@ -9,7 +9,7 @@ const props = defineProps<{
 
 const emit = defineEmits<{ (e: "toggle", value: boolean): void }>();
 
-// 批量导入所有图片资源
+// Bulk-import all image assets
 const imageModules = import.meta.glob<{ default: string }>("@/assets/images/*.png", { eager: true });
 
 const { t, locale } = useI18n();
@@ -54,7 +54,7 @@ const commentText = computed(() => {
 
 const iconSrc = computed(() => imagesMap[props.item?.name?.toLowerCase?.()]);
 
-// Windows 下，除 putty 与 mstsc 外，提供可选择 exe 路径的入口
+// On Windows, provide an exe path picker for everything except putty and mstsc
 const isWindowsPathPickTarget = computed(() => {
   return props.item?.is_internal === false && isWindows.value;
 });
@@ -68,7 +68,7 @@ const canEnable = computed(() => {
   return !!(props.item?.path && props.item.path.trim());
 });
 
-// user_path 类型保持开关可点击，以便在应用不存在时提示用户
+// Keep the toggle clickable for the user_path type, so we can notify the user when the app doesn't exist
 const switchDisabled = computed(() => {
   return isUserPathPlugin.value ? false : !canEnable.value;
 });
@@ -174,7 +174,7 @@ const selectExecutablePath = async () => {
   }
 };
 
-// 在 Windows 下，已选择路径后仍允许点击展示区域以重新选择
+// On Windows, still allow clicking the display area to reselect after a path has been chosen
 const onPathClick = () => {
   if (isWindowsPathPickTarget.value) {
     selectExecutablePath();
@@ -209,7 +209,7 @@ const onPathClick = () => {
             />
           </div>
 
-          <!-- Windows 下特定项显示路径选择，否则展示已有路径 -->
+          <!-- On Windows, specific items show a path picker; otherwise show the existing path -->
           <div class="min-w-0">
             <template v-if="isWindowsPathPickTarget && !props.item.path">
               <UButton label="Select path" color="neutral" variant="outline" @click="selectExecutablePath()" />

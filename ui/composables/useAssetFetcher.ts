@@ -6,7 +6,7 @@ import { useUserInfoStore } from "~/store/modules/userInfo";
 const LIMIT = 20;
 let assetRequestSequence = 0;
 
-// get_assets 通过全局事件返回结果，请求 ID 用于区分不同菜单及不同分页请求。
+// get_assets returns results via a global event; the request ID distinguishes between different menus and different pagination requests.
 const createAssetRequestId = (assetType: AssetPageType) => {
   assetRequestSequence += 1;
   return `${assetType}-${Date.now()}-${assetRequestSequence}`;
@@ -98,7 +98,7 @@ export const useAssetFetcher = (assetType: AssetPageType, scrollRef?: Ref<HTMLEl
     const el = scrollRef.value;
     const notScrollable = el.scrollHeight <= el.clientHeight + 1;
 
-    // 如果不可滚动,且还有数据,继续请求下一页
+    // If not scrollable and there's more data, keep requesting the next page
     if (notScrollable && hasMore.value && !isLoading.value) {
       fetchNextPage(currentSearch.value, currentOrder.value);
     }
@@ -118,7 +118,7 @@ export const useAssetFetcher = (assetType: AssetPageType, scrollRef?: Ref<HTMLEl
         ticking = false;
         if (!hasMore.value || isLoading.value) return;
 
-        // 元素内容的总高度 - 元素内容被卷起（向上滚动）的距离 - 元素可视区域的高度
+        // Total content height of the element - distance scrolled up - visible height of the element
         const distanceToBottom = el.scrollHeight - el.scrollTop - el.clientHeight;
 
         if (distanceToBottom <= 50) {
@@ -152,7 +152,7 @@ export const useAssetFetcher = (assetType: AssetPageType, scrollRef?: Ref<HTMLEl
   }
 
   /**
-   * @description 开始加载
+   * @description Start loading
    */
   const beginLoading = () => {
     isLoading.value = true;
@@ -163,7 +163,7 @@ export const useAssetFetcher = (assetType: AssetPageType, scrollRef?: Ref<HTMLEl
   };
 
   /**
-   * @description 结束加载
+   * @description Finish loading
    */
   const endLoading = () => {
     isLoading.value = false;
@@ -176,7 +176,7 @@ export const useAssetFetcher = (assetType: AssetPageType, scrollRef?: Ref<HTMLEl
   };
 
   /**
-   * @description 判断是否为当前路由
+   * @description Check whether this is the current route
    */
   const isActiveForCurrentRoute = () => {
     const pathLower = route.path.toLowerCase();
@@ -204,7 +204,7 @@ export const useAssetFetcher = (assetType: AssetPageType, scrollRef?: Ref<HTMLEl
   };
 
   /**
-   * @description 根据资产类型过滤结果
+   * @description Filter results by asset type
    * @param items
    */
   const filterResultsByAssetType = (items: RawAssetData[]) => {
@@ -219,7 +219,7 @@ export const useAssetFetcher = (assetType: AssetPageType, scrollRef?: Ref<HTMLEl
       case "windows":
         return items.filter((it) => {
           const typeValue = it.type?.value?.toLowerCase();
-          // Windows 菜单会合并普通 Windows 和 Windows AD 两类资产。
+          // The Windows menu merges regular Windows and Windows AD assets.
           return typeValue === "windows" || typeValue === "windows_ad";
         });
       case "windows_ad":
@@ -230,7 +230,7 @@ export const useAssetFetcher = (assetType: AssetPageType, scrollRef?: Ref<HTMLEl
       case "other":
         return items.filter((it) => {
           const typeValue = it.type?.value?.toLowerCase();
-          // “其他”页承接 JumpServer 主机类型里的 unix / other。
+          // The “Other” page covers the unix / other host types from JumpServer.
           return typeValue === "unix" || typeValue === "other";
         });
       case "database":
@@ -249,25 +249,25 @@ export const useAssetFetcher = (assetType: AssetPageType, scrollRef?: Ref<HTMLEl
   };
 
   /**
-   * @description 追加页码数据
+   * @description Append paginated data
    * @param pageData
    * @param fetchedCount
    * @param count
    */
   const appendPageData = (pageData: RawAssetData[], fetchedCount: number, count?: number | null) => {
-    // 如果大于 20 条那么只显示 20 条
+    // If there are more than 20 items, only show 20
     if (pageData.length > LIMIT) pageData = pageData.slice(0, LIMIT);
 
     rawAssetsList.value.push(...pageData);
-    // pageData 是过滤后的展示数据；分页游标必须按服务端原始页条数推进，保持与 count 同一口径。
+    // pageData is the filtered display data; the pagination cursor must advance by the server's raw page item count, to stay consistent with count.
     offset.value += fetchedCount;
     totalCount.value = count ?? offset.value;
-    // 原始页为空代表分页没有进展，即使 count 异常偏大也要停止，避免重复请求同一个 offset。
+    // An empty raw page means pagination made no progress; stop even if count looks abnormally large, to avoid repeatedly requesting the same offset.
     hasMore.value = fetchedCount > 0 && offset.value < totalCount.value;
   };
 
   /**
-   * @description 获取下一页资产数据
+   * @description Fetch the next page of asset data
    * @param search
    * @param order
    */
@@ -330,7 +330,7 @@ export const useAssetFetcher = (assetType: AssetPageType, scrollRef?: Ref<HTMLEl
   }
 
   /**
-   * @description 刷新资产数据（重置状态并重新获取）
+   * @description Refresh asset data (reset state and refetch)
    * @param search
    * @param order
    */
@@ -348,7 +348,7 @@ export const useAssetFetcher = (assetType: AssetPageType, scrollRef?: Ref<HTMLEl
   }
 
   /**
-   * @description 监听 Tauri 事件
+   * @description Listen for Tauri events
    */
   const listenTauriEvent = async () => {
     subscribeGetAssetsEvent.value = await useTauriEventListen("get-asset-success", (event) => {
@@ -362,7 +362,7 @@ export const useAssetFetcher = (assetType: AssetPageType, scrollRef?: Ref<HTMLEl
 
       if (!isLoading.value) return;
       if (!isActiveForCurrentRoute()) return;
-      // 全局事件会被所有菜单实例收到，只允许当前活动请求修改本菜单状态。
+      // The global event is received by every menu instance; only the currently active request is allowed to modify this menu's state.
       if (resp.request_id !== activeRequestId.value) return;
 
       activeRequestId.value = null;
@@ -383,7 +383,7 @@ export const useAssetFetcher = (assetType: AssetPageType, scrollRef?: Ref<HTMLEl
 
       if (!isLoading.value) return;
       if (!isActiveForCurrentRoute()) return;
-      // 过期请求失败不能结束新请求的 loading，也不能修改 hasMore 或登录状态。
+      // A stale request's failure must not end a new request's loading, nor modify hasMore or login state.
       if (payload.request_id !== activeRequestId.value) return;
 
       activeRequestId.value = null;
@@ -428,7 +428,7 @@ export const useAssetFetcher = (assetType: AssetPageType, scrollRef?: Ref<HTMLEl
   };
 
   /**
-   * @description 取消监听 Tauri 事件
+   * @description Stop listening for Tauri events
    */
   const unListenTauriEvent = () => {
     subscribeGetAssetsEvent.value?.();
@@ -499,7 +499,7 @@ export const useAssetFetcher = (assetType: AssetPageType, scrollRef?: Ref<HTMLEl
           } as RawAssetData;
         }
 
-        // 记录 assetID
+        // Record the assetID
         lastDetailAssetId.value = payload.assetId;
 
         nextTick(() => {

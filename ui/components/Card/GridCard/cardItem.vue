@@ -31,7 +31,7 @@ const displayAddressLine = computed(() => {
 });
 
 /**
- * @description 处理右击事件
+ * @description Handle right-click event
  */
 const handleContextMenu = (event: MouseEvent) => {
   event.preventDefault();
@@ -40,14 +40,14 @@ const handleContextMenu = (event: MouseEvent) => {
 };
 
 /**
- * @description 处理上下文事件
+ * @description Handle the context event
  */
 const handleContextTrigger = (asset: AssetItem) => {
   emits("contextTrigger", asset);
 };
 
 /**
- * @description 处理开始重命名
+ * @description Handle starting a rename
  */
 const handleRenameTrigger = (asset: AssetItem) => {
   if (asset.id !== props.asset.id) return;
@@ -59,7 +59,7 @@ const handleRenameTrigger = (asset: AssetItem) => {
 };
 
 /**
- * @description 提交重命名
+ * @description Submit the rename
  */
 const submitRename = () => {
   const name = renameValue.value.trim();
@@ -75,7 +75,7 @@ const submitRename = () => {
 };
 
 /**
- * @description 取消重命名
+ * @description Cancel the rename
  */
 const cancelRename = () => {
   isRenaming.value = false;

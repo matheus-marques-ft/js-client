@@ -1,48 +1,48 @@
-# JumpServer Client 连接插件机制设计
+# JumpServer Client Connection Plugin Mechanism Design
 
-## 背景与目标
+## Background and Goals
 
-当前客户端通过单体 `config.json` 定义各协议的外部连接工具（终端、远程桌面、文件传输、数据库等）。随着支持的工具增多，存在以下问题：
+The client currently defines external connection tools for each protocol (terminal, remote desktop, file transfer, database, etc.) through a single monolithic `config.json`. As the number of supported tools grows, this causes issues:
 
-- 单体 JSON 难以维护、合并冲突频繁
-- 平台差异逻辑散落在 `awaken_*.go` 与配置中（如 Navicat URL、iTerm AppleScript、AutoIt）
-- 新增工具需改主仓库并发版，第三方无法独立扩展
-- UI 图标与工具名硬编码在 Vue 组件中
+- The monolithic JSON is hard to maintain, with frequent merge conflicts
+- Platform-specific logic is scattered across `awaken_*.go` and config (e.g. Navicat URL, iTerm AppleScript, AutoIt)
+- Adding a new tool requires modifying the main repo and cutting a release; third parties can't extend it independently
+- UI icons and tool names are hardcoded in Vue components
 
-**目标**：将每种连接工具拆为独立**插件包**，内置常用插件，其余支持上传安装。
+**Goal**: split each connection tool into an independent **plugin package**, bundling common plugins while allowing the rest to be uploaded and installed.
 
 ---
 
-## 核心概念
+## Core Concepts
 
-| 概念 | 说明 |
+| Concept | Description |
 |------|------|
-| **插件 (Plugin)** | 一个独立目录或 `.jscplugin` 包，描述一种外部连接工具 |
-| **内置插件 (builtin)** | 随安装包分发，位于 `resources/plugins/builtin/` |
-| **用户插件 (installed)** | 用户安装，位于 `{config_dir}/jumpserver-client/plugins/` |
-| **清单 (manifest)** | 插件元数据：id、版本、作者、支持协议等 |
-| **连接定义 (connect)** | 各平台如何启动外部程序 |
-| **用户状态 (state)** | 用户选择、自定义路径等，与插件包分离 |
+| **Plugin** | A standalone directory or `.jscplugin` package describing one external connection tool |
+| **Builtin plugin** | Shipped with the install package, located at `resources/plugins/builtin/` |
+| **Installed plugin** | Installed by the user, located at `{config_dir}/jumpserver-client/plugins/` |
+| **Manifest** | Plugin metadata: id, version, author, supported protocols, etc. |
+| **Connect definition** | How to launch the external program on each platform |
+| **User state** | User selections, custom paths, etc., kept separate from the plugin package |
 
 ---
 
-## 架构总览
+## Architecture Overview
 
 ```mermaid
 flowchart TB
-    subgraph sources [插件来源]
-        B[builtin/ 内置插件]
-        I[installed/ 用户安装]
+    subgraph sources [Plugin Sources]
+        B[builtin/ builtin plugins]
+        I[installed/ user-installed]
     end
 
     subgraph loader [Plugin Loader - Rust]
-        D[发现与校验]
-        M[合并为 AppConfig 兼容结构]
-        S[读写 plugins-state.json]
+        D[Discovery and validation]
+        M[Merge into AppConfig-compatible structure]
+        S[Read/write plugins-state.json]
     end
 
-    subgraph runtime [运行时]
-        UI[设置页 / 连接选择]
+    subgraph runtime [Runtime]
+        UI[Settings page / connect selection]
         AW[go-client awaken]
     end
 
@@ -54,24 +54,24 @@ flowchart TB
     M --> AW
 ```
 
-### 数据流
+### Data flow
 
-1. **启动时**：`PluginService` 扫描 builtin + installed，校验 manifest，合并为现有 `AppConfigType` 结构（**向后兼容**）。
-2. **设置页**：展示所有可用插件；用户切换默认工具、配置 exe 路径 → 写入 `plugins-state.json`。
-3. **连接时**：`awaken` 仍读取合并后的配置，按 `launch.type` 执行启动逻辑。
+1. **On startup**: `PluginService` scans builtin + installed, validates the manifest, and merges into the existing `AppConfigType` structure (**backward compatible**).
+2. **Settings page**: shows all available plugins; the user switches the default tool, configures the exe path → written to `plugins-state.json`.
+3. **On connect**: `awaken` still reads the merged config, and executes the launch logic according to `launch.type`.
 
 ---
 
-## 目录布局
+## Directory Layout
 
 ```
-jumpserver-client/                 # 用户配置目录
-├── config.json                    # 逐步瘦身：仅保留窗口/UI 全局设置
-├── plugins-state.json             # 用户插件偏好（替代 match_first / path / is_set）
+jumpserver-client/                 # User config directory
+├── config.json                    # Gradually slimmed down: only keeps window/UI global settings
+├── plugins-state.json             # User plugin preferences (replaces match_first / path / is_set)
 └── plugins/
-    └── {plugin_id}/               # 用户安装的插件（解压后的目录）
+    └── {plugin_id}/               # User-installed plugins (extracted directory)
 
-resources/                         # 安装包内
+resources/                         # Inside the install package
 └── plugins/
     └── builtin/
         ├── putty/
@@ -79,31 +79,31 @@ resources/                         # 安装包内
         └── ...
 ```
 
-仓库开发目录：
+Repo development directory:
 
 ```
 plugins/
 ├── schema/
 │   └── manifest.schema.json
-├── builtin/                       # 内置插件源码（构建时复制到 resources）
-├── demo/                          # 第三方开发示例
+├── builtin/                       # Builtin plugin source (copied into resources at build time)
+├── demo/                          # Third-party development example
 └── tools/
-    └── pack.sh                    # 打包 .jscplugin
+    └── pack.sh                    # Packages a .jscplugin
 ```
 
 ---
 
-## 插件包结构
+## Plugin Package Structure
 
-每个插件是一个目录，打包为 `{id}-{version}.jscplugin`（ZIP，扩展名自定义）。
+Each plugin is a directory, packaged as `{id}-{version}.jscplugin` (a ZIP, with a custom extension).
 
 ```
 my-terminal-plugin/
-├── manifest.json          # 必填：元数据
-├── icon.png               # 必填：128×128，设置页展示
-├── connect.json           # 必填：连接定义
-├── README.md              # 可选：说明文档
-└── scripts/               # 可选：复杂启动脚本
+├── manifest.json          # Required: metadata
+├── icon.png               # Required: 128×128, shown on the settings page
+├── connect.json           # Required: connect definition
+├── README.md              # Optional: documentation
+└── scripts/               # Optional: complex launch scripts
     ├── launch.windows.ps1
     ├── launch.macos.sh
     ├── launch.macos.applescript
@@ -132,48 +132,48 @@ my-terminal-plugin/
 }
 ```
 
-| 字段 | 必填 | 说明 |
+| Field | Required | Description |
 |------|------|------|
-| `id` | ✓ | 全局唯一，反向域名，安装后作为目录名 |
-| `name` | ✓ | 短名，用于图标回退与日志 |
-| `display_name` | ✓ | UI 展示名 |
-| `version` | ✓ | 语义化版本 |
-| `min_client_version` | ✓ | 最低客户端版本 |
+| `id` | ✓ | Globally unique, reverse domain notation, used as the directory name after install |
+| `name` | ✓ | Short name, used for icon fallback and logging |
+| `display_name` | ✓ | Name shown in the UI |
+| `version` | ✓ | Semantic version |
+| `min_client_version` | ✓ | Minimum required client version |
 | `category` | ✓ | `terminal` \| `remotedesktop` \| `filetransfer` \| `databases` |
-| `protocols` | ✓ | 支持的协议列表 |
-| `builtin` | | `true` 表示内置，不可卸载 |
+| `protocols` | ✓ | List of supported protocols |
+| `builtin` | | `true` means builtin, cannot be uninstalled |
 
 ### connect.json
 
-按平台描述如何启动。`launch.type` 决定执行器：
+Describes how to launch, per platform. `launch.type` determines the executor:
 
-| type | 说明 | 典型场景 |
+| type | Description | Typical scenario |
 |------|------|----------|
-| `args` | 模板替换后作为命令行参数 | PuTTY、DBeaver |
-| `script` | 执行 `scripts/` 下平台脚本，传入 JSON 上下文 | iTerm2、复杂 GUI 自动化 |
-| `url` | 构建 URL Scheme 并 `open` | Navicat |
-| `file` | 先写临时文件再打开 | RDP `.rdp` |
-| `autoit` | Windows AutoIt 步骤序列（兼容现有配置） | Navicat 填表 |
-| `system` | 调用 OS 内置能力 | macOS `open` RDP 文件 |
+| `args` | Template substitution used as command-line arguments | PuTTY, DBeaver |
+| `script` | Runs the platform script under `scripts/`, passing in a JSON context | iTerm2, complex GUI automation |
+| `url` | Builds a URL scheme and `open`s it | Navicat |
+| `file` | Writes a temp file first, then opens it | RDP `.rdp` |
+| `autoit` | Windows AutoIt step sequence (compatible with existing config) | Navicat form-filling |
+| `system` | Calls a built-in OS capability | macOS `open` for an RDP file |
 
-**模板变量**（与现 `arg_format` 一致）：
+**Template variables** (consistent with the existing `arg_format`):
 
-| 变量 | 说明 |
+| Variable | Description |
 |------|------|
-| `{name}` | 连接会话名（已转义） |
-| `{protocol}` | 协议名 |
-| `{username}` | 账号（SSH 类会加 `JMS-` 前缀） |
-| `{value}` | 密码/Token |
-| `{host}` | 主机地址 |
-| `{port}` | 端口 |
-| `{file}` | 临时文件路径（`file` 类型） |
-| `{dbname}` | 数据库名 |
-| `{use_ssl}` | 是否 SSL |
-| `{allow_invalid_cert}` | 是否允许无效证书 |
+| `{name}` | Connection session name (already escaped) |
+| `{protocol}` | Protocol name |
+| `{username}` | Account (SSH-type gets a `JMS-` prefix) |
+| `{value}` | Password/token |
+| `{host}` | Host address |
+| `{port}` | Port |
+| `{file}` | Temp file path (`file` type) |
+| `{dbname}` | Database name |
+| `{use_ssl}` | Whether SSL is used |
+| `{allow_invalid_cert}` | Whether invalid certs are allowed |
 
-示例见 `plugins/demo/hello-terminal/connect.json`。
+See `plugins/demo/hello-terminal/connect.json` for an example.
 
-### plugins-state.json（用户状态，非插件包内）
+### plugins-state.json (user state, not part of the plugin package)
 
 ```json
 {
@@ -191,74 +191,74 @@ my-terminal-plugin/
 }
 ```
 
-- `selections`：每个 `category:protocol` 当前选用的插件 `id`（替代 `match_first`）
-- `plugins[id].path`：用户自定义可执行文件路径（替代 config 中的 `path`）
-- `plugins[id].enabled`：是否启用（可禁用已安装插件）
+- `selections`: the currently selected plugin `id` for each `category:protocol` (replaces `match_first`)
+- `plugins[id].path`: the user's custom executable path (replaces `path` in config)
+- `plugins[id].enabled`: whether it's enabled (allows disabling an installed plugin)
 
 ---
 
-## 插件生命周期
+## Plugin Lifecycle
 
 ```mermaid
 sequenceDiagram
-    participant U as 用户
-    participant UI as 设置页
+    participant U as User
+    participant UI as Settings page
     participant RS as PluginService (Rust)
-    participant FS as 文件系统
+    participant FS as File system
 
-    Note over RS,FS: 应用启动
-    RS->>FS: 扫描 builtin + installed
-    RS->>RS: 校验 manifest + connect.json
-    RS->>RS: 合并 → AppConfig 兼容结构
+    Note over RS,FS: App startup
+    RS->>FS: Scan builtin + installed
+    RS->>RS: Validate manifest + connect.json
+    RS->>RS: Merge -> AppConfig-compatible structure
 
-    U->>UI: 上传 .jscplugin
+    U->>UI: Upload .jscplugin
     UI->>RS: install_plugin(path)
-    RS->>RS: 校验 id 冲突、min_client_version
-    RS->>FS: 解压到 plugins/{id}/
-    RS->>UI: 刷新列表
+    RS->>RS: Validate id conflicts, min_client_version
+    RS->>FS: Extract to plugins/{id}/
+    RS->>UI: Refresh the list
 
-    U->>UI: 选择 SSH 默认工具
+    U->>UI: Select default SSH tool
     UI->>RS: set_selection(terminal, ssh, plugin_id)
-    RS->>FS: 更新 plugins-state.json
+    RS->>FS: Update plugins-state.json
 ```
 
-### 安装规则
+### Install rules
 
-1. 解压到 `{config_dir}/plugins/{manifest.id}/`
-2. `id` 与内置插件冲突 → 拒绝（内置优先）
-3. 同 `id` 已存在 → 版本更高则覆盖，更低则拒绝
-4. 可选：校验 ZIP 内 `SIGNATURE`（后续版本）
+1. Extract to `{config_dir}/plugins/{manifest.id}/`
+2. If `id` conflicts with a builtin plugin → reject (builtin takes priority)
+3. If the same `id` already exists → overwrite if the version is newer, reject if older
+4. Optional: validate a `SIGNATURE` inside the ZIP (a future version)
 
-### 卸载规则
+### Uninstall rules
 
-- 仅 `builtin: false` 可卸载
-- 卸载时若该插件为某协议默认，回退到同协议第一个可用内置插件
+- Only `builtin: false` plugins can be uninstalled
+- If the uninstalled plugin was the default for some protocol, fall back to the first available builtin plugin for that protocol
 
 ---
 
-## 与现有代码的迁移策略
+## Migration Strategy for Existing Code
 
-### 阶段 1：插件化配置（兼容模式）
+### Phase 1: Plugin-ize the config (compatibility mode)
 
-- 将 `config.json` 中各 `AppItem` 拆为 `plugins/builtin/{name}/`
-- 新增 `PluginService`（Rust），启动时合并为现有 `AppConfigType`
-- `get_config` / `update_config_selection` 改为读写 `plugins-state.json`
-- **前端与 go-client 无需大改**
+- Split each `AppItem` in `config.json` into `plugins/builtin/{name}/`
+- Add a new `PluginService` (Rust) that merges into the existing `AppConfigType` at startup
+- `get_config` / `update_config_selection` are changed to read/write `plugins-state.json`
+- **No major changes needed on the frontend or go-client**
 
-### 阶段 2：启动器插件化
+### Phase 2: Plugin-ize the launcher
 
-- `awaken` 增加 `launch.type` 分发：`script` / `url` / `file`
-- 将 Navicat、iTerm 等特殊逻辑迁入对应插件 `scripts/`
-- 减少 `awaken_windows.go` 中的硬编码
+- `awaken` gets a `launch.type` dispatch: `script` / `url` / `file`
+- Special-case logic like Navicat and iTerm is moved into the corresponding plugin's `scripts/`
+- Reduces hardcoding in `awaken_windows.go`
 
-### 阶段 3：插件市场（可选）
+### Phase 3: Plugin marketplace (optional)
 
-- JumpServer 服务端分发 `.jscplugin`
-- 企业管理员推送插件策略
+- The JumpServer server distributes `.jscplugin` packages
+- Enterprise admins push plugin policies
 
-### config.json 瘦身
+### Slimming down config.json
 
-保留：
+Keep:
 
 ```json
 {
@@ -269,39 +269,39 @@ sequenceDiagram
 }
 ```
 
-移除 `windows` / `macos` / `linux` 下的应用列表（迁至插件）。
+Remove the app lists under `windows` / `macos` / `linux` (moved to plugins).
 
 ---
 
-## API 设计（Tauri Commands）
+## API Design (Tauri Commands)
 
-| Command | 说明 |
+| Command | Description |
 |---------|------|
-| `list_plugins` | 列出所有插件（builtin + installed）及状态 |
-| `get_config` | 返回合并后的 `AppConfigType`（兼容现有前端） |
-| `install_plugin` | 安装 `.jscplugin` 包 |
-| `uninstall_plugin` | 卸载用户插件 |
-| `update_config_selection` | 设置协议默认插件 / 自定义路径（兼容现有签名） |
-| `export_plugin_template` | 导出空白模板 ZIP（开发者工具） |
+| `list_plugins` | List all plugins (builtin + installed) and their state |
+| `get_config` | Return the merged `AppConfigType` (compatible with the existing frontend) |
+| `install_plugin` | Install a `.jscplugin` package |
+| `uninstall_plugin` | Uninstall a user plugin |
+| `update_config_selection` | Set the default plugin for a protocol / a custom path (compatible with the existing signature) |
+| `export_plugin_template` | Export a blank template ZIP (developer tool) |
 
 ---
 
-## 安全考量
+## Security Considerations
 
-1. **脚本执行**：`script` 类型仅执行插件目录内 `scripts/`，禁止 `..` 路径
-2. **安装来源**：首版仅支持本地文件选择；后续可加签名验证
-3. **权限声明**：manifest 可增加 `permissions: ["exec", "write_temp_file"]` 供审核
-4. **沙箱**：脚本通过环境变量 `JMS_CONNECT_JSON` 传参，不拼接 shell 字符串
+1. **Script execution**: the `script` type only executes scripts under the plugin's own `scripts/` directory; `..` paths are forbidden
+2. **Install source**: the first version only supports local file selection; signature verification may be added later
+3. **Permission declaration**: the manifest may add a `permissions: ["exec", "write_temp_file"]` field for review purposes
+4. **Sandboxing**: scripts receive parameters via the `JMS_CONNECT_JSON` environment variable, not by concatenating shell strings
 
 ---
 
-## 插件包格式 (.jscplugin)
+## Plugin Package Format (.jscplugin)
 
-- ZIP 压缩，UTF-8 文件名
-- 根目录直接包含 `manifest.json`（不含额外顶层文件夹）
-- 推荐命名：`{id}@{version}.jscplugin`，例如 `com.example.xshell@1.0.0.jscplugin`
+- ZIP compression, UTF-8 filenames
+- `manifest.json` sits directly at the root (no extra top-level folder)
+- Recommended naming: `{id}@{version}.jscplugin`, e.g. `com.example.xshell@1.0.0.jscplugin`
 
-打包：
+Packaging:
 
 ```bash
 ./plugins/tools/pack.sh plugins/demo/hello-terminal
@@ -309,17 +309,17 @@ sequenceDiagram
 
 ---
 
-## 内置插件建议清单
+## Suggested Builtin Plugin List
 
-| 平台 | category | 建议内置 |
+| Platform | category | Suggested builtin |
 |------|----------|----------|
 | Windows | terminal | putty |
 | Windows | remotedesktop | mstsc |
-| Windows | filetransfer | winscp（可选） |
+| Windows | filetransfer | winscp (optional) |
 | macOS | terminal | terminal, iterm |
-| macOS | remotedesktop | 系统 RDP（open） |
-| Linux | terminal | 系统 terminal |
+| macOS | remotedesktop | system RDP (open) |
+| Linux | terminal | system terminal |
 | Linux | remotedesktop | xfreerdp, tigervnc |
-| 全平台 | databases | dbeaver（需用户配路径） |
+| All platforms | databases | dbeaver (requires the user to configure the path) |
 
-其余（XShell、Navicat、MobaXterm 等）以**可选插件**形式提供下载或用户自行打包安装。
+The rest (XShell, Navicat, MobaXterm, etc.) are provided as **optional plugins**, available for download or for users to package and install themselves.

@@ -25,14 +25,14 @@ impl ConnectService {
         Self { api }
     }
 
-    /// 获取当前组织可用的连接方式
+    /// Get the connect methods available for the current organization
     pub async fn get_connect_methods(&self) -> ApiResponse {
         let url = self.api.endpoint(endpoint::terminal::CONNECT_METHODS);
 
         self.api.get_with_response(&url).await
     }
 
-    /// 创建资产连接 Token
+    /// Create an asset connection token
     pub async fn get_connect_token(&self, body: &TokenRequestBody) -> ApiResponse {
         let url = self
             .api
@@ -41,7 +41,7 @@ impl ConnectService {
         self.api.post_json_with_response(&url, &body).await
     }
 
-    /// 根据连接 Token 获取本地客户端启动 URL
+    /// Get the local client launch URL from a connection token
     pub async fn get_local_client_url(
         &self,
         token_id: &str,

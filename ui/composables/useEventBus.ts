@@ -47,7 +47,7 @@ export const useEventBus = () => {
       onBeforeUnmount(() => emitter.off(event, handler as any));
     }
 
-    // 返回取消订阅函数
+    // Return the unsubscribe function
     return () => emitter.off(event, handler as any);
   };
 

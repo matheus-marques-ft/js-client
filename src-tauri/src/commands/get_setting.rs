@@ -35,7 +35,7 @@ pub async fn get_setting(
     let setting_data = setting_service.get_setting().await;
 
     if !setting_data.success {
-        error!("获取 Setting 数据失败");
+        error!("Failed to fetch Setting data");
 
         let _ = app.emit(
             "get-setting-failure",
@@ -44,7 +44,7 @@ pub async fn get_setting(
         return Ok(());
     }
 
-    info!("获取 Setting 数据成功");
+    info!("Fetched Setting data successfully");
 
     let _ = app.emit(
         "get-setting-success",

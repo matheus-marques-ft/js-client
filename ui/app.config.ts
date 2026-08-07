@@ -3,12 +3,12 @@ export default defineAppConfig({
     name: "JumpServer Client",
     author: "JumpServer",
     version: "4.0.0",
-    repo: "https://github.com/jumpserver/clients"
+    repo: "https://github.com/matheus-marques-ft/js-client"
   },
   componentsConfig: {
     header: {
-      // 颜色现在通过 CSS 变量管理，在 main.css 中定义
-      // 这里保留用于其他可能的配置
+      // Colors are now managed via CSS variables, defined in main.css
+      // Kept here for any other possible configuration
     },
     pages: {
       scrollBarLightThumbColor: "#D0D1D2",

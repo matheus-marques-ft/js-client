@@ -49,7 +49,7 @@ const platformClass = computed(() => {
   return `platform-${platformKey}`;
 });
 
-// 因为 <Body> 是一个虚拟组件，底层并不会响应 Vue 的 :style 绑定。它的作用是把插槽内容插入到真正的 <body> 中，但自身不是一个响应式桥梁。
+// Because <Body> is a virtual component, it doesn't respond to Vue's :style binding under the hood. Its job is to insert slot content into the real <body>, but it isn't itself a reactive bridge.
 useHead({
   bodyAttrs: {
     class: computed(() => `${platformClass.value} font-sans antialiased h-screen w-screen`),
@@ -139,11 +139,11 @@ async function applyAfterHydration() {
 }
 
 onMounted(async () => {
-  // 初始化 HTTP 回调服务器 (开发环境)
+  // Initialize the HTTP callback server (dev environment)
   try {
     await useTauriCoreInvoke("init_http_callback_server", {});
   } catch (error) {
-    // 忽略错误，生产环境不需要此服务
+    // Ignore the error; this service isn't needed in production
     console.debug("HTTP callback server initialization:", error);
   }
 
@@ -172,7 +172,7 @@ onMounted(async () => {
         applyThemePreference(mode as any);
       }
 
-      // 应用当前主题对应的主色
+      // Apply the primary color for the current theme
       applyCurrentThemeColor();
     });
   } catch (err) {

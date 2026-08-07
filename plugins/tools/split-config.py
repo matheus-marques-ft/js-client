@@ -174,7 +174,7 @@ def write_plugin(pid: str, data: dict) -> None:
         "version": "1.0.0",
         "min_client_version": "4.0.0",
         "author": "JumpServer",
-        "homepage": "https://github.com/jumpserver/clients",
+        "homepage": "https://github.com/matheus-marques-ft/js-client",
         "download_url": src.get("download_url", ""),
         "category": data["category"],
         "protocols": sorted(data["protocols"]),

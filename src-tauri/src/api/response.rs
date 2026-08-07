@@ -25,7 +25,7 @@ impl ApiResponse {
     }
 }
 
-/// 将响应信息转换成前端统一使用的 API 结构格式
+/// Convert the response info into the unified API structure used by the frontend
 pub async fn into_api_response(
     url: &str,
     result: Result<reqwest::Response, reqwest::Error>,
@@ -38,8 +38,8 @@ pub async fn into_api_response(
             ApiResponse::ok(status, data)
         }
         Err(err) => {
-            log::warn!("请求 {} 失败: {}", url, err);
-            ApiResponse::failed(format!("请求失败: {}", err))
+            log::warn!("Request {} failed: {}", url, err);
+            ApiResponse::failed(format!("Request failed: {}", err))
         }
     }
 }

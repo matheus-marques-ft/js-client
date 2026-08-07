@@ -5,9 +5,9 @@ pub(crate) struct HttpServerState {
     app_handle: AppHandle,
 }
 
-// 将 app_handle 注册为共享状态是由于需要从 app_handle 中取出 Auth 数据
-// axum route 被浏览器通过 HTTP 调用时，只会收到 HTTP 请求上下文，不会自动有 Tauri 上下文
-// 所以要主动把 AppHandle 放进 axum 的 State
+// The app_handle is registered as shared state because Auth data needs to be pulled from it.
+// When an axum route is called over HTTP from the browser, it only gets the HTTP request context — it doesn't automatically have the Tauri context.
+// So the AppHandle must be deliberately put into axum's State.
 impl HttpServerState {
     pub(crate) fn new(app_handle: AppHandle) -> Self {
         Self { app_handle }

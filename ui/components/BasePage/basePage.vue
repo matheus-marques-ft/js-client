@@ -100,14 +100,14 @@ watch(
 );
 
 /**
- * 获取 Setting 信息
+ * Fetch Setting info
  */
 async function getSettings() {
   await useTauriCoreInvoke("get_setting", {});
 }
 
 /**
- * @description 打开 contextMenu
+ * @description Open the contextMenu
  */
 const handleContextTrigger = (asset: AssetItem, event?: MouseEvent) => {
   assetManagement.setCurrentAsset(asset);
@@ -121,18 +121,18 @@ const handleContextTrigger = (asset: AssetItem, event?: MouseEvent) => {
 };
 
 /**
- * @description 打开编辑弹窗
+ * @description Open the edit popup
  */
 const handleEditTrigger = async (asset: AssetItem) => {
   try {
     const info = await connEditorRef.value!.open(asset);
-    // 仅保存连接配置，不触发连接
+    // Only save the connection config, don't trigger a connection
     saveConnectionInfo(asset, info);
   } catch {}
 };
 
 /**
- * @description 处理资产连接
+ * @description Handle asset connection
  */
 const handleConnectAsset = async (asset: AssetItem, preferredProtocol?: string) => {
   const saved = asset.savedConnection;
@@ -175,14 +175,14 @@ const handleConnectAsset = async (asset: AssetItem, preferredProtocol?: string) 
 };
 
 /**
- * @description 右键菜单的连接操作
+ * @description The context menu's connect action
  */
 const handleConnectTrigger = (asset: AssetItem, protocol?: string) => {
   handleConnectAsset(asset, protocol);
 };
 
 /**
- * @description 监听 Tauri 事件
+ * @description Listen for Tauri events
  */
 const listenTauriEvent = async () => {
   interface eventPayloadType {

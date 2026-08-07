@@ -20,7 +20,7 @@ export function useAssetConnection() {
   const userInfoStore = useUserInfoStore();
 
   /**
-   * 仅保存连接信息（不触发连接）
+   * Only save connection info (doesn't trigger a connection)
    */
   const saveConnectionInfo = (asset: AssetItem, connectionInfo: ConnectionFormInfo) => {
     let resolvedAccountId: string | undefined = connectionInfo.accountId;
@@ -64,7 +64,7 @@ export function useAssetConnection() {
   };
 
   /**
-   * 处理连接确认（从模态框）
+   * Handle connect confirmation (from the modal)
    */
   const confirmConnection = (asset: AssetItem, connectionInfo: ConnectionFormInfo) => {
     handleAssetConnection(connectionInfo.account, asset.id, connectionInfo.protocol, asset.permedAccounts!, undefined, {

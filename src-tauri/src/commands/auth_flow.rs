@@ -14,7 +14,7 @@ pub async fn auth_login(
     flow_state: State<'_, AuthFlowState>,
     site: String,
 ) -> Result<(), String> {
-    // 获取 OAuth 配置
+    // Fetch the OAuth config
     let config_http_client = api_client_for_origin(&site).map_err(|e| e.to_string())?;
     let oauth_config = match fetch_oauth_config(&site, &config_http_client).await {
         Ok(config) => config,
@@ -41,7 +41,7 @@ pub async fn auth_login(
     let fut = async {
         let client = build_oauth_client(&site, &client_id)?;
 
-        // 生成 PKCE + 授权 URL
+        // Generate PKCE + the authorization URL
         let authorize = create_authorization_request(&client);
         let pending = flow_state.register_authorization(authorize);
 
@@ -51,7 +51,7 @@ pub async fn auth_login(
 
         let http_client = oauth_client_for_origin(&site)?;
 
-        // 等待 deep link 回调传回 code/state
+        // Wait for the deep link callback to return code/state
         let callback = match pending.callback_rx.await {
             Ok(callback) => callback,
             Err(_) => {
@@ -62,12 +62,12 @@ pub async fn auth_login(
 
         let tokens = exchange_authorization_code(&client, &http_client, callback).await?;
 
-        // 保存 OAuth token，供后续请求自动刷新使用。
+        // Save the OAuth token, for automatic refresh on subsequent requests.
         if let Err(e) = tokens.persist(&site, &client_id).await {
             log::warn!("persist tokens failed: {}", e);
         }
 
-        // 发起请求
+        // Make the request
         let user_service = UserService::new(site.clone(), tokens.access_token.clone())?;
         let (profile, permission_orgs, current_org, xpack_message) = tokio::join!(
             user_service.get_user_profile(),

@@ -330,9 +330,9 @@ async function openToolWindow(
 }
 
 /**
- * @description 标准化站点输入：去除首尾空格 + 去除末尾斜杠
- * @param value 站点输入
- * @returns 标准化后的站点
+ * @description Normalize site input: trim leading/trailing whitespace + strip trailing slash
+ * @param value site input
+ * @returns the normalized site
  */
 function normalizeSite(value: string): string {
   const s = (value || "").trim();
@@ -498,7 +498,7 @@ const checkVersionBeforeOAuth = async (site: string) => {
 };
 
 /**
- * @description 打开登录页面
+ * @description Open the login page
  */
 function openLoginPage() {
   openModal.value = true;
@@ -511,7 +511,7 @@ function openLoginPage() {
 }
 
 /**
- * @description 清除验证错误
+ * @description Clear validation errors
  */
 function clearValidationError() {
   if (hasValidationError.value) {
@@ -521,8 +521,8 @@ function clearValidationError() {
 }
 
 /**
- * @description 切换账户子菜单
- * @returns 切换账户子菜单
+ * @description Toggle the account submenu
+ * @returns toggles the account submenu
  */
 function switchAccountChildren() {
   const items: DropdownMenuItem[] = (Object.values(userMap.value) as UserData[]).map((u: UserData) => {
@@ -552,8 +552,8 @@ function switchAccountChildren() {
 }
 
 /**
- * @description 切换账户
- * @param site 站点
+ * @description Switch account
+ * @param site site
  */
 function handleSwitchAccount(site: string) {
   if (site === currentSite.value) return;
@@ -566,21 +566,21 @@ function handleSwitchAccount(site: string) {
 }
 
 /**
- * @description 清除认证信息
+ * @description Clear auth info
  */
 function clearAuthInfo() {
   userInfoStore.deleteUserData(currentSite.value);
 }
 
 /**
- * @description 过滤输入中的控制字符
+ * @description Filter control characters out of the input
  */
 // eslint-disable-next-line no-control-regex
 const sanitizeInput = (value: string) => value.replace(/[\u0000-\u001F\u007F-\u009F]/g, "");
 
 /**
- * @description 输入事件处理：移除控制字符，并保持光标位置
- * 移除控制字符后，用“移除前的长度差”修正光标，保证左右键仍可正常移动
+ * @description Input event handling: strip control characters while preserving cursor position
+ * After stripping control characters, correct the cursor using the “length difference before removal”, so the left/right arrow keys still work normally
  */
 const handleInputSanitize = (event: Event) => {
   const target = event.target as HTMLInputElement | null;
@@ -609,8 +609,8 @@ const handleInputSanitize = (event: Event) => {
 };
 
 /**
- * @description 处理剪贴板输入
- * @param value 剪贴板输入
+ * @description Handle clipboard input
+ * @param value clipboard input
  */
 const handleClipboard = (value: string) => {
   inputSite.value = normalizeSite(value);
@@ -618,7 +618,7 @@ const handleClipboard = (value: string) => {
 };
 
 /**
- * @description 处理确认输入
+ * @description Handle confirmed input
  */
 const handleConfirm = async () => {
   if (loginBtn.value) return;

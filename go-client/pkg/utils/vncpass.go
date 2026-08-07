@@ -7,10 +7,10 @@ import (
 	"path/filepath"
 )
 
-// 固定 VNC 原始密钥
+// Fixed VNC raw key
 var originalKey = []byte{0x17, 0x52, 0x6b, 0x09, 0x33, 0x51, 0x6e, 0x4b}
 
-// Bit 反转一个字节（用于 TigerVNC 加密 key）
+// Bit-reverse a byte (used for the TigerVNC encryption key)
 func reverseBits(b byte) byte {
 	var rev byte
 	for i := 0; i < 8; i++ {
@@ -20,7 +20,7 @@ func reverseBits(b byte) byte {
 	return rev
 }
 
-// 构造 VNC 所需的 DES key
+// Build the DES key required by VNC
 func generateVNCKey() []byte {
 	key := make([]byte, len(originalKey))
 	for i, b := range originalKey {
@@ -29,7 +29,7 @@ func generateVNCKey() []byte {
 	return key
 }
 
-// 明文密码转为 8 字节
+// Convert the plaintext password to 8 bytes
 func padPassword(pw string) []byte {
 	p := []byte(pw)
 	if len(p) > 8 {
@@ -38,26 +38,26 @@ func padPassword(pw string) []byte {
 	return append(p, bytes.Repeat([]byte{0}, 8-len(p))...)
 }
 
-// 生成 .vncpass 文件并返回路径
+// Generate the .vncpass file and return its path
 func GenerateVNCPasswordFile(password string) (string, error) {
-	// 获取 ~/.config/jumpserver-client 路径
+	// Get the ~/.config/jumpserver-client path
 	configDir, err := os.UserConfigDir()
 	if err != nil {
 		return "", err
 	}
 	currentPath := filepath.Join(configDir, "jumpserver-client")
 
-	// 确保目录存在
+	// Make sure the directory exists
 	err = os.MkdirAll(currentPath, os.ModePerm)
 	if err != nil {
 		return "", err
 	}
 
-	// 随机文件名
+	// Random filename
 	filename := ".vncpaxx"
 	outputPath := filepath.Join(currentPath, filename)
 
-	// 加密处理
+	// Encryption
 	key := generateVNCKey()
 	block, err := des.NewCipher(key)
 	if err != nil {
@@ -67,7 +67,7 @@ func GenerateVNCPasswordFile(password string) (string, error) {
 	ciphertext := make([]byte, 8)
 	block.Encrypt(ciphertext, plaintext)
 
-	// 写入文件
+	// Write the file
 	err = os.WriteFile(outputPath, ciphertext, os.ModePerm)
 	if err != nil {
 		return "", err

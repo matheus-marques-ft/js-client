@@ -1,18 +1,18 @@
 /**
- * 平台检测 composable
- * 提供跨平台的平台检测功能
+ * Platform detection composable
+ * Provides cross-platform platform-detection functionality
  */
 export const usePlatform = () => {
   const platform = ref<string>("unknown");
   const isLoading = ref(true);
 
-  // 计算属性：判断是否为 macOS
+  // Computed: check whether this is macOS
   const isMacOS = computed(() => platform.value === "darwin" || platform.value === "macos");
 
-  // 计算属性：判断是否为 Windows
+  // Computed: check whether this is Windows
   const isWindows = computed(() => platform.value === "win32" || platform.value === "windows");
 
-  // 计算属性：判断是否为 Linux
+  // Computed: check whether this is Linux
   const isLinux = computed(() => platform.value === "linux");
 
   const detectPlatformFromUserAgent = () => {
@@ -26,7 +26,7 @@ export const usePlatform = () => {
     return "unknown";
   };
 
-  // 获取平台信息，如果 Tauri OS 插件暂时不可用，则退回到浏览器环境判断
+  // Get platform info; fall back to browser-environment detection if the Tauri OS plugin isn't available yet
   const getPlatform = async () => {
     try {
       isLoading.value = true;
@@ -39,7 +39,7 @@ export const usePlatform = () => {
     }
   };
 
-  // 组件挂载时自动获取平台信息
+  // Automatically fetch platform info when the component mounts
   onMounted(() => {
     getPlatform();
   });

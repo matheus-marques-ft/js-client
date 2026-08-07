@@ -83,13 +83,13 @@ func (r *Rouse) getName() string {
 	return replacer.Replace(name)
 }
 
-// reportError 统一处理错误输出：记录日志并输出到 stderr
+// reportError centralizes error output handling: logs it and writes to stderr
 func reportError(msg string) {
 	global.LOG.Error(msg)
 	fmt.Fprintf(os.Stderr, "Error: %s\n", msg)
 }
 
-// reportErrorf 格式化错误消息并统一处理
+// reportErrorf formats an error message and handles it the same way
 func reportErrorf(format string, args ...interface{}) {
 	msg := fmt.Sprintf(format, args...)
 	reportError(msg)

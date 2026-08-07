@@ -1,28 +1,28 @@
-# 录像转码模块 (Transcode)
+# Recording Transcode Module (Transcode)
 
-## 功能概述
+## Overview
 
-将 JumpServer Guacamole 协议的会话录像（`.tar` 归档文件）转码为 H.264 MP4 视频文件。
+Transcodes JumpServer Guacamole-protocol session recordings (`.tar` archive files) into H.264 MP4 video files.
 
-支持三个平台的原生硬件/软件编码：
+Supports native hardware/software encoding on three platforms:
 
-| 平台 | 编码器 | 编码方式 |
+| Platform | Encoder | Encoding method |
 |------|--------|----------|
-| macOS | VideoToolbox | 硬件加速（GPU/ANE） |
-| Linux | OpenH264 | 软件编码（CPU） |
-| Windows | IMFSinkWriter | 系统级管道（自动选择硬件/软件编码器） |
+| macOS | VideoToolbox | Hardware-accelerated (GPU/ANE) |
+| Linux | OpenH264 | Software encoding (CPU) |
+| Windows | IMFSinkWriter | System-level pipeline (automatically picks a hardware/software encoder) |
 
-## 架构
+## Architecture
 
 ```
 ┌──────────────────────────────────────────────────────────────────────┐
 │  Tauri Command: transcode_replays                                    │
 │  (mod.rs)                                                            │
-│  - 接收 tar 文件路径列表 + 输出目录 + 用户配置                        │
-│  - 解压 tar → 提取 replay.json + .part.gz                            │
-│  - gzip 解压得到原始 guacamole 数据                                   │
-│  - 调用 transcode_to_mp4 生成视频                                    │
-│  - 通过 Tauri emit("transcode-progress") 向前端报告进度               │
+│  - Receives a list of tar file paths + output directory + user config │
+│  - Extracts the tar -> pulls out replay.json + .part.gz              │
+│  - gzip-decompresses to get the raw guacamole data                   │
+│  - Calls transcode_to_mp4 to generate the video                      │
+│  - Reports progress to the frontend via Tauri emit("transcode-progress") │
 └──────────────────────────┬───────────────────────────────────────────┘
                            │
          ┌─────────────────┼──────────────────┐
@@ -30,8 +30,9 @@
   ┌──────────────┐  ┌──────────────┐  ┌──────────────────┐
   │  parser.rs   │  │ renderer.rs  │  │  transcode.rs    │
   │              │  │              │  │                  │
-  │ Guacamole    │  │ 多图层画布   │  │ 编码+封装管线    │
-  │ 协议解析器   │  │ 渲染器       │  │ (平台分支)       │
+  │ Guacamole    │  │ Multi-layer  │  │ Encode+mux       │
+  │ protocol     │  │ canvas       │  │ pipeline         │
+  │ parser       │  │ renderer     │  │ (per-platform)   │
   └──────────────┘  └──────────────┘  └───────┬──────────┘
                                               │
                            ┌──────────────────┼─────────────────────┐
@@ -39,247 +40,249 @@
                   ┌────────────────┐  ┌────────────────┐  ┌──────────────────┐
                   │  macOS / Linux │  │    Windows     │  │  encoder.rs      │
                   │                │  │                │  │                  │
-                  │  多线程 chunk  │  │  单线程        │  │  平台编码器      │
-                  │  并行编码      │  │  Sink Writer   │  │  抽象            │
-                  │  + 手工 MP4    │  │  直写          │  │                  │
+                  │  Multi-thread  │  │  Single-thread │  │  Platform        │
+                  │  chunk         │  │  Sink Writer   │  │  encoder         │
+                  │  parallel      │  │  direct write  │  │  abstraction     │
+                  │  encoding      │  │                │  │                  │
+                  │  + manual MP4  │  │                │  │                  │
                   └────────────────┘  └────────────────┘  └──────────────────┘
 ```
 
-### 模块说明
+### Module overview
 
-| 文件 | 职责 |
+| File | Responsibility |
 |------|------|
-| `mod.rs` | Tauri command 入口、tar/gzip 解压、进度事件、分辨率/码率/功率配置 |
-| `parser.rs` | 零拷贝解析 Guacamole 协议的 length-prefixed 指令格式 |
-| `renderer.rs` | 维护多图层画布，处理 `size`/`img`/`blob`/`cfill`/`rect`/`copy` 绘图指令，合成 RGB 帧 |
-| `transcode.rs` | 编码管线：帧时间线构建、渲染调度、缩放、编码、MP4 封装（按平台分支） |
-| `encoder.rs` | 平台编码器抽象：macOS VideoToolbox / Linux OpenH264 / Windows IMFSinkWriter |
+| `mod.rs` | Tauri command entry point, tar/gzip extraction, progress events, resolution/bitrate/power config |
+| `parser.rs` | Zero-copy parser for Guacamole's length-prefixed instruction format |
+| `renderer.rs` | Maintains the multi-layer canvas, handles `size`/`img`/`blob`/`cfill`/`rect`/`copy` drawing instructions, composites RGB frames |
+| `transcode.rs` | Encoding pipeline: frame timeline construction, render scheduling, scaling, encoding, MP4 muxing (per-platform) |
+| `encoder.rs` | Platform encoder abstraction: macOS VideoToolbox / Linux OpenH264 / Windows IMFSinkWriter |
 
-## 转码流程
+## Transcode Flow
 
-### 共享阶段（所有平台）
+### Shared stage (all platforms)
 
 ```
-tar 文件
-  ├─ <uuid>.replay.json     ← 会话元数据 (serde_json 解析)
-  └─ <uuid>.0.part.gz       ← gzip 压缩的 guacamole 录像（可多 part）
+tar file
+  ├─ <uuid>.replay.json     ← Session metadata (parsed with serde_json)
+  └─ <uuid>.0.part.gz       ← gzip-compressed guacamole recording (can be multiple parts)
          │
-         ▼ (flate2 解压，按 part 序号拼接)
-    guacamole 原始指令流
+         ▼ (decompressed with flate2, concatenated by part number)
+    Raw guacamole instruction stream
          │
-         ├─► scan_max_canvas_size    扫描全部 size 指令，获取最大画布尺寸
-         ├─► parse_and_build_timeline 按 100ms 间隔采样帧时间线
+         ├─► scan_max_canvas_size    scans all size instructions to get the max canvas size
+         ├─► parse_and_build_timeline samples the frame timeline at 100ms intervals
          │
          ▼
-    FrameInfo 列表 (timestamp + instruction_offset)
+    FrameInfo list (timestamp + instruction_offset)
 ```
 
-### macOS / Linux 编码路径
+### macOS / Linux encoding path
 
 ```
-FrameInfo 列表
+FrameInfo list
     │
-    ▼ (按 chunk 分割，每 chunk 50 帧)
+    ▼ (split into chunks, 50 frames per chunk)
     │
-    ├─► chunk 0: 主线程编码 → 提取 canonical SPS/PPS
+    ├─► chunk 0: encoded on the main thread -> extracts the canonical SPS/PPS
     │
-    ├─► chunk 1..N: std::thread::spawn 多线程并行
-    │     每个线程:
-    │       1. 从 instruction_offset 恢复 parser + renderer 状态
-    │       2. 逐帧 composite → RGB
-    │       3. fast_image_resize 缩放至目标分辨率
-    │       4. RGB → I420/YUV420 转换
-    │       5. VideoToolbox / OpenH264 编码 → NAL units
-    │       6. 帧去重 (FNV-1a hash)，相同帧记录 repeat_count
+    ├─► chunk 1..N: parallelized via std::thread::spawn
+    │     each thread:
+    │       1. restores parser + renderer state from instruction_offset
+    │       2. composites frame by frame -> RGB
+    │       3. scales to the target resolution with fast_image_resize
+    │       4. converts RGB -> I420/YUV420
+    │       5. encodes via VideoToolbox / OpenH264 -> NAL units
+    │       6. frame dedup (FNV-1a hash); identical frames recorded via repeat_count
     │
-    ▼ (收集所有 ChunkResult)
+    ▼ (collects all ChunkResults)
     │
     ▼ write_mp4_faststart:
-       1. 写入临时文件: mdat (裸 H.264 NAL 流 + 4 字节长度前缀)
-       2. 追加 moov (手动构建 ISOBMFF box)
-       3. 重排为 faststart 布局: ftyp → moov → mdat
-       4. 删除临时文件
+       1. writes to a temp file: mdat (raw H.264 NAL stream + 4-byte length prefix)
+       2. appends moov (manually built ISOBMFF box)
+       3. rearranges into faststart layout: ftyp -> moov -> mdat
+       4. deletes the temp file
 
-输出: MP4 文件 (ftyp + moov + mdat)
+Output: MP4 file (ftyp + moov + mdat)
 ```
 
-### Windows 编码路径
+### Windows encoding path
 
 ```
-FrameInfo 列表
+FrameInfo list
     │
-    ▼ (单线程单遍渲染)
+    ▼ (single-threaded, single-pass rendering)
     │
     ├─► SinkWriterEncoder::new(output_path, w, h, bitrate, fps)
     │     1. CoInitializeEx + MFStartup
-    │     2. MFCreateSinkWriterFromURL → IMFSinkWriter
-    │     3. 配置输出类型: H.264 + High Profile + 码率
-    │     4. AddStream → 获取 stream_index
-    │     5. 配置输入类型: RGB24 (BGR DIB 字节序)
+    │     2. MFCreateSinkWriterFromURL -> IMFSinkWriter
+    │     3. configures the output type: H.264 + High Profile + bitrate
+    │     4. AddStream -> gets stream_index
+    │     5. configures the input type: RGB24 (BGR DIB byte order)
     │     6. BeginWriting
     │
-    ├─► 逐帧循环:
-    │     1. parser 回放至 sync 时间点
-    │     2. renderer.composite_into → RGB 帧
-    │     3. fast_image_resize 缩放至目标分辨率
-    │     4. 帧去重 (FNV-1a hash)
-    │     5. write_frame: RGB→BGR 交换 + 垂直翻转 → IMFMediaBuffer → IMFSample → WriteSample
-    │        Sink Writer 内部自动完成: BGR→NV12 色彩转换 → H.264 编码 → MP4 封装
+    ├─► per-frame loop:
+    │     1. parser replays up to the sync timestamp
+    │     2. renderer.composite_into -> RGB frame
+    │     3. scales to the target resolution with fast_image_resize
+    │     4. frame dedup (FNV-1a hash)
+    │     5. write_frame: RGB->BGR swap + vertical flip -> IMFMediaBuffer -> IMFSample -> WriteSample
+    │        The Sink Writer automatically handles internally: BGR->NV12 color conversion -> H.264 encoding -> MP4 muxing
     │
-    ├─► SinkWriterEncoder::finalize → Finalize
+    ├─► SinkWriterEncoder::finalize -> Finalize
     │
     ▼
 
-输出: MP4 文件 (由系统 MP4 Muxer Sink 生成)
+Output: MP4 file (produced by the system's MP4 Muxer Sink)
 ```
 
-## 关键设计
+## Key Design Points
 
-### 帧采样策略
+### Frame sampling strategy
 
-- 固定 10fps 输出，每 100ms 一个采样点
-- 首遍扫描 guac 指令流构建 `FrameInfo` 时间线
-- 最多 600 帧（长录像自动降采样）
+- Fixed 10fps output, one sample point every 100ms
+- A first pass scans the guac instruction stream to build the `FrameInfo` timeline
+- Capped at 600 frames (long recordings are automatically downsampled)
 
-### 帧去重
+### Frame deduplication
 
-- 对每帧 RGB 数据计算 FNV-1a 哈希（步长 8 像素采样）
-- 连续相同帧不重复编码，而是记录 `repeat_count`
-- macOS/Linux: 在 MP4 `stts` box 中写入重复计数
-- Windows: 重复调用 `WriteSample` 写入相同帧数据
+- Computes an FNV-1a hash for each frame's RGB data (sampled at an 8-pixel stride)
+- Consecutive identical frames aren't re-encoded; a `repeat_count` is recorded instead
+- macOS/Linux: the repeat count is written into the MP4 `stts` box
+- Windows: `WriteSample` is called repeatedly with the same frame data
 
-### 分辨率对齐
+### Resolution alignment
 
-- 编码宽高对齐到 16 的倍数（`& !15`）
-- 确保 H.264 宏块（16×16）完整对齐，避免编码器内部填充导致的画质劣化
+- Encoding width/height are aligned to a multiple of 16 (`& !15`)
+- Ensures H.264 macroblocks (16×16) align cleanly, avoiding quality degradation from internal encoder padding
 
-### 码率计算
+### Bitrate calculation
 
 ```rust
-// 针对屏幕录制内容优化（文字、图标、细线条）
+// Optimized for screen-recording content (text, icons, thin lines)
 bitrate = pixels × 5 bps    // 5 bits per pixel
 clamp(800 Kbps, 20 Mbps)
 ```
 
-| 分辨率 | 码率 |
+| Resolution | Bitrate |
 |--------|------|
 | 1920×1080 | 10.4 Mbps |
 | 1280×768 | 4.9 Mbps |
 | 1024×768 | 3.9 Mbps |
 | 640×360 | 1.2 Mbps |
 
-### 并行编码（macOS / Linux）
+### Parallel encoding (macOS / Linux)
 
-- 帧列表按 chunk 分割（每 chunk 50 帧）
-- 首 chunk 主线程编码以提取 canonical SPS/PPS
-- 剩余 chunk 分配到 `min(可用 CPU × cpu_fraction, chunk 数)` 个线程并行
-- 每个线程独立创建 encoder 实例，独立解析 guac 指令恢复渲染状态
+- The frame list is split into chunks (50 frames per chunk)
+- The first chunk is encoded on the main thread to extract the canonical SPS/PPS
+- The remaining chunks are distributed across `min(available CPUs × cpu_fraction, chunk count)` parallel threads
+- Each thread creates its own encoder instance and independently parses guac instructions to restore render state
 
-### Windows 单线程管线
+### Windows single-threaded pipeline
 
-- IMFSinkWriter 封装了完整的编码+封装管道，内部自动选择最优编码器（硬件优先）
-- 单线程逐帧渲染→写入，无需手工管理 NAL/MP4
-- 硬件加速时编码器吞吐远高于渲染速度，单线程不构成瓶颈
+- IMFSinkWriter wraps the full encode+mux pipeline, automatically picking the best encoder internally (hardware preferred)
+- Single-threaded per-frame render->write, no need to manage NAL/MP4 manually
+- With hardware acceleration, encoder throughput is far higher than render speed, so single-threading isn't a bottleneck
 
-### MP4 封装（macOS / Linux）
+### MP4 muxing (macOS / Linux)
 
-- 手工构建 ISOBMFF box：`ftyp` → `moov` → `mdat`
-- faststart 布局：moov 置于 mdat 之前，支持流式播放
-- 两遍写入：先写临时文件（mdat + moov），再重排为最终布局
+- Manually builds ISOBMFF boxes: `ftyp` -> `moov` -> `mdat`
+- Faststart layout: moov is placed before mdat, to support streaming playback
+- Two-pass write: first writes to a temp file (mdat + moov), then rearranges into the final layout
 
-## 平台编码器详情
+## Platform Encoder Details
 
 ### macOS — VideoToolbox
 
 ```
-RGB → I420 (手工转换，BT.601 矩阵)
-    → shiguredo_video_toolbox crate
-    → Hardware Encoder (GPU/ANE)
-    → NAL units (Annex B)
-    → 手工拆分 + 4 字节长度前缀
+RGB -> I420 (manual conversion, BT.601 matrix)
+    -> shiguredo_video_toolbox crate
+    -> Hardware Encoder (GPU/ANE)
+    -> NAL units (Annex B)
+    -> manually split + 4-byte length prefix
 ```
 
 - Profile: Baseline + CAVLC
-- GOP: 50 帧 (5 秒@10fps)
-- 优先编码速度 (`prioritize_encoding_speed_over_quality: true`)
+- GOP: 50 frames (5 seconds @10fps)
+- Prioritizes encoding speed (`prioritize_encoding_speed_over_quality: true`)
 
 ### Linux — OpenH264
 
 ```
-RGB → YUV420 (openh264 crate 内置 RgbSliceU8 → YUVBuffer)
-    → openh264::Encoder
-    → NAL units (Annex B)
-    → split_annex_b 手工拆分
-    → 4 字节长度前缀
+RGB -> YUV420 (via the openh264 crate's built-in RgbSliceU8 -> YUVBuffer)
+    -> openh264::Encoder
+    -> NAL units (Annex B)
+    -> manually split via split_annex_b
+    -> 4-byte length prefix
 ```
 
-- 纯软件编码，CPU 密集型
-- 支持多线程 chunk 并行
+- Pure software encoding, CPU-intensive
+- Supports multi-threaded chunk parallelism
 
 ### Windows — IMFSinkWriter
 
 ```
-RGB → BGR (逐像素 R/B 交换，DIB 字节序)
-    → 垂直翻转 (top-down → bottom-up)
-    → IMFMediaBuffer → IMFSample
-    → IMFSinkWriter::WriteSample
-    → [系统内部] Color Converter DSP (BGR→NV12)
-    → [系统内部] H.264 Encoder MFT (硬件优先: QSV/NVENC/AMF)
-    → [系统内部] MP4 Muxer Sink
+RGB -> BGR (per-pixel R/B swap, DIB byte order)
+    -> vertical flip (top-down -> bottom-up)
+    -> IMFMediaBuffer -> IMFSample
+    -> IMFSinkWriter::WriteSample
+    -> [internal to the system] Color Converter DSP (BGR->NV12)
+    -> [internal to the system] H.264 Encoder MFT (hardware preferred: QSV/NVENC/AMF)
+    -> [internal to the system] MP4 Muxer Sink
 ```
 
-- Profile: High (CABAC 熵编码)
-- 编码器由系统自动选择，优先硬件
-- 无需手工管理 NAL、SPS/PPS、MP4 box
+- Profile: High (CABAC entropy coding)
+- The encoder is chosen automatically by the system, hardware preferred
+- No need to manage NAL, SPS/PPS, or MP4 boxes manually
 
-## 前端配置
+## Frontend Configuration
 
-### 用户可选参数
+### User-selectable parameters
 
-| 参数 | 选项 | 说明 | 平台影响 |
+| Parameter | Options | Description | Platform impact |
 |------|------|------|----------|
-| `filename_style` | `original` / `friendly` / `friendly_uuid` | 输出文件命名格式 | 全平台 |
-| `output_resolution` | `original` / `p1080` / `p720` / `p360` | 输出分辨率 | 全平台 |
-| `transcode_power` | `auto` / `full` / `fast` / `medium` / `low` | CPU 使用率 | macOS/Linux 有效；Windows 固定 `auto` |
+| `filename_style` | `original` / `friendly` / `friendly_uuid` | Output filename format | All platforms |
+| `output_resolution` | `original` / `p1080` / `p720` / `p360` | Output resolution | All platforms |
+| `transcode_power` | `auto` / `full` / `fast` / `medium` / `low` | CPU usage | Effective on macOS/Linux; fixed to `auto` on Windows |
 
-### 进度事件
+### Progress events
 
-通过 Tauri `emit("transcode-progress", TranscodeProgress)` 发送：
+Sent via Tauri `emit("transcode-progress", TranscodeProgress)`:
 
 ```typescript
 interface TranscodeProgress {
-  file: string // 文件名或 session ID
-  index: number // 当前文件在批次中的索引
-  total: number // 批次总文件数
+  file: string // filename or session ID
+  index: number // this file's index within the batch
+  total: number // total number of files in the batch
   progress: number // 0–100
-  message: string // 状态描述
-  success?: boolean // 完成时设置
-  output?: string // 输出文件路径
-  duration?: number // 转码耗时（秒）
-  metadata?: ReplayMetadata // 会话元数据（首次事件时发送）
+  message: string // status description
+  success?: boolean // set on completion
+  output?: string // output file path
+  duration?: number // transcode duration (seconds)
+  metadata?: ReplayMetadata // session metadata (sent with the first event)
 }
 ```
 
-## 依赖
+## Dependencies
 
-| crate | 用途 | 平台 |
+| crate | Purpose | Platform |
 |-------|------|------|
-| `flate2` | gzip 解压 `.part.gz` | 全平台 |
-| `tar` | 解压 `.tar` 归档 | 全平台 |
-| `image` | PNG/JPEG/WebP 解码（guacamole `blob` 指令） | 全平台 |
-| `fast_image_resize` | 双线性插值缩放 | 全平台 |
-| `base64` | guacamole `blob` 指令中的 base64 解码 | 全平台 |
-| `serde` / `serde_json` | replay.json 解析 | 全平台 |
-| `tokio` | 异步运行时 + `spawn_blocking` | 全平台 |
-| `num_cpus` | 动态计算并行线程数 | macOS / Linux |
-| `shiguredo_video_toolbox` | VideoToolbox 硬件编码器 | macOS |
-| `openh264` | OpenH264 软件编码器 | Linux |
-| `windows` (MediaFoundation) | IMFSinkWriter 系统级编码管道 | Windows |
+| `flate2` | gzip-decompresses `.part.gz` | All platforms |
+| `tar` | Extracts the `.tar` archive | All platforms |
+| `image` | PNG/JPEG/WebP decoding (guacamole `blob` instruction) | All platforms |
+| `fast_image_resize` | Bilinear-interpolation scaling | All platforms |
+| `base64` | base64 decoding in the guacamole `blob` instruction | All platforms |
+| `serde` / `serde_json` | replay.json parsing | All platforms |
+| `tokio` | Async runtime + `spawn_blocking` | All platforms |
+| `num_cpus` | Dynamically computes the parallel thread count | macOS / Linux |
+| `shiguredo_video_toolbox` | VideoToolbox hardware encoder | macOS |
+| `openh264` | OpenH264 software encoder | Linux |
+| `windows` (MediaFoundation) | IMFSinkWriter system-level encoding pipeline | Windows |
 
-## 已知限制
+## Known Limitations
 
-- 仅支持 Guacamole 协议录像（RDP/VNC/SSH 通过 Guacamole 网关的场景）
-- 画布尺寸取录像中 `size` 指令的最大值，不支持录像中途分辨率动态切换
-- 不支持音频轨道（guacamole `audio` 指令被忽略）
-- 帧采样为固定间隔，非事件驱动，静态画面会产生冗余帧（通过帧去重缓解）
-- Windows 路径为单线程编码，不支持 chunk 并行
+- Only supports Guacamole-protocol recordings (RDP/VNC/SSH sessions going through a Guacamole gateway)
+- Canvas size is taken from the max value across `size` instructions in the recording; mid-recording resolution switches aren't supported
+- No audio track support (the guacamole `audio` instruction is ignored)
+- Frame sampling is at a fixed interval, not event-driven, so static screens produce redundant frames (mitigated by frame dedup)
+- The Windows path encodes single-threaded, with no chunk parallelism

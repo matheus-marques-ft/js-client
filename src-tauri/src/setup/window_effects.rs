@@ -3,7 +3,7 @@ use log::{error, info};
 use std::error::Error;
 use tauri::WebviewWindow;
 
-/// 为 macOS 窗口应用毛玻璃效果
+/// Apply a frosted-glass effect to the macOS window
 #[cfg(target_os = "macos")]
 pub fn apply_mac_vibrancy(win: &WebviewWindow) -> Result<(), Box<dyn Error>> {
     use window_vibrancy::NSVisualEffectMaterial;
@@ -25,10 +25,10 @@ pub fn apply_mac_vibrancy(win: &WebviewWindow) -> Result<(), Box<dyn Error>> {
     }
 }
 
-/// 为 Windows 窗口应用模糊效果
+/// Apply a blur effect to the Windows window
 #[cfg(target_os = "windows")]
 pub fn apply_windows_blur(_win: &WebviewWindow) -> Result<(), Box<dyn std::error::Error>> {
-    // Windows 下禁用模糊效果以避免边框问题
+    // Blur effect is disabled on Windows to avoid border issues
     info!("Windows blur effect disabled to avoid border issues");
 
     if let Err(e) = _win.set_decorations(false) {
@@ -41,7 +41,7 @@ pub fn apply_windows_blur(_win: &WebviewWindow) -> Result<(), Box<dyn std::error
     Ok(())
 }
 
-/// 为 Linux 窗口隐藏原生标题栏，使用应用内自定义按钮
+/// Hide the native title bar on the Linux window, using custom in-app buttons instead
 #[cfg(target_os = "linux")]
 pub fn apply_linux_window(win: &WebviewWindow) -> Result<(), Box<dyn std::error::Error>> {
     info!("Disabling Linux window decorations for custom header");
@@ -51,9 +51,9 @@ pub fn apply_linux_window(win: &WebviewWindow) -> Result<(), Box<dyn std::error:
     Ok(())
 }
 
-/// 根据操作系统应用相应的窗口效果
+/// Apply the appropriate window effect based on the operating system
 pub fn apply_window_effects(win: &WebviewWindow) -> Result<(), Box<dyn Error>> {
-    // 平台特定特效
+    // Platform-specific effects
     let result: Result<(), Box<dyn Error>> = {
         #[cfg(target_os = "macos")]
         {
@@ -73,7 +73,7 @@ pub fn apply_window_effects(win: &WebviewWindow) -> Result<(), Box<dyn Error>> {
             Ok(())
         }
     };
-    // 窗口尺寸持久化逻辑
+    // Window size persistence logic
     setup_window_size_persistence(win.clone());
     result
 }
