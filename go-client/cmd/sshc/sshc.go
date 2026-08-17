@@ -176,7 +176,7 @@ jmstool ssh root@127.0.0.1 -p 2222
 					}
 					w, h, err := terminal.GetSize(fd)
 					if err != nil {
-						log.Printf("Unable to send window-change reqest: %s. \n", err)
+						log.Printf("Unable to send window-change request: %s. \n", err)
 						continue
 					}
 					if err := sess.WindowChange(h, w); err != nil {

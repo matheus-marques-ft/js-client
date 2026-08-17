@@ -5,3 +5,8 @@ trak = "trak"
 # "flate" comes from the `flate2` crate name (DEFLATE compression), not a typo
 # of "flat" - see docs/transcode/SOLUTION.md.
 flate = "flate"
+
+[files]
+# go.mod/go.sum are full of pseudo-version commit hashes (e.g. "...2c7772ba3064")
+# that randomly collide with real words ("ba") - not prose, nothing to spell-check.
+extend-exclude = ["**/go.mod", "**/go.sum"]
