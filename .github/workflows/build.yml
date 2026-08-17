@@ -158,8 +158,14 @@ jobs:
           node-version: "23"
           cache: pnpm
 
+      - name: Check Apple certificate availability
+        id: apple_cert
+        run: echo "configured=${{ secrets.APPLE_CERTIFICATE != '' }}" >> "$GITHUB_OUTPUT"
+
       - name: Setup Apple Certificate
-        if: startsWith(matrix.platform, 'macos')
+        # No APPLE_CERTIFICATE configured on this fork yet - skip so macOS
+        # still builds (unsigned) instead of hard-failing the whole job.
+        if: startsWith(matrix.platform, 'macos') && steps.apple_cert.outputs.configured == 'true'
         env:
           APPLE_CERTIFICATE: ${{ secrets.APPLE_CERTIFICATE }}
           APPLE_CERTIFICATE_PASSWORD: ${{ secrets.APPLE_CERTIFICATE_PASSWORD }}
@@ -167,7 +173,7 @@ jobs:
         run: npm run setup_apple_cert
 
       - name: Sign embedded Go client binary (macOS only)
-        if: startsWith(matrix.platform, 'macos')
+        if: startsWith(matrix.platform, 'macos') && steps.apple_cert.outputs.configured == 'true'
         env:
           APPLE_SIGNING_IDENTITY: ${{ env.APPLE_SIGNING_IDENTITY }}
           TARGET_ARCH: ${{ matrix.target == 'aarch64-apple-darwin' && 'arm64' || 'amd64' }}

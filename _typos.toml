@@ -1,0 +1,7 @@
+[default.extend-words]
+# "trak" is the real ISO-BMFF/MP4 box name (Track box), not a typo of "track" -
+# see src-tauri/src/transcode/transcode.rs.
+trak = "trak"
+# "flate" comes from the `flate2` crate name (DEFLATE compression), not a typo
+# of "flat" - see docs/transcode/SOLUTION.md.
+flate = "flate"
