@@ -1,0 +1,73 @@
+name: Auto Version and Tag
+
+on:
+  push:
+    branches:
+      - dev
+
+jobs:
+  auto-tag:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.RELEASE_PAT }}
+
+      - name: Compute next version (js-jumpserver is the canonical source)
+        id: version
+        env:
+          GH_TOKEN: ${{ secrets.RELEASE_PAT }}
+        run: |
+          LAST_TAG=$(gh api repos/matheus-marques-ft/js-jumpserver/tags --paginate --jq '.[].name' \
+            | grep -E '^v[0-9]+\.[0-9]+\.[0-9]+$' | sort -V | tail -n1)
+          if [ -z "$LAST_TAG" ]; then
+            LAST_STABLE=$(gh api repos/matheus-marques-ft/js-jumpserver/tags --paginate --jq '.[].name' \
+              | grep -E '^v[0-9]+\.[0-9]+\.[0-9]+-stable$' | sort -V | tail -n1)
+            LAST_TAG="${LAST_STABLE%-stable}"
+          fi
+          if [ -z "$LAST_TAG" ]; then
+            NEW_TAG="v0.1.1"
+          else
+            VERSION=${LAST_TAG#v}
+            MAJOR=$(echo "$VERSION" | cut -d. -f1)
+            MINOR=$(echo "$VERSION" | cut -d. -f2)
+            PATCH=$(echo "$VERSION" | cut -d. -f3)
+            PATCH=$((PATCH + 1))
+            if [ "$PATCH" -gt 999 ]; then
+              PATCH=0
+              MINOR=$((MINOR + 1))
+            fi
+            NEW_TAG="v${MAJOR}.${MINOR}.${PATCH}"
+          fi
+          echo "new_tag=$NEW_TAG" >> "$GITHUB_OUTPUT"
+          echo "Next version: $NEW_TAG"
+
+      - name: Tag this repo and propagate to all siblings
+        env:
+          GH_TOKEN: ${{ secrets.RELEASE_PAT }}
+        run: |
+          NEW_TAG="${{ steps.version.outputs.new_tag }}"
+          OWNER="matheus-marques-ft"
+          REPOS="js-jumpserver js-sdk-go js-koko js-lion js-luna js-lina js-chen js-docker-web js-installer js-client"
+          THIS_REPO="$(basename "${{ github.repository }}")"
+
+          git config user.name 'github-actions[bot]'
+          git config user.email 'github-actions[bot]@users.noreply.github.com'
+          git tag "${NEW_TAG}"
+          git push origin "${NEW_TAG}"
+
+          for repo in ${REPOS}; do
+            if [ "${repo}" = "${THIS_REPO}" ]; then
+              continue
+            fi
+            SHA=$(gh api "repos/${OWNER}/${repo}/git/refs/heads/dev" --jq '.object.sha')
+            gh api -X POST "repos/${OWNER}/${repo}/git/refs" \
+              -f ref="refs/tags/${NEW_TAG}" -f sha="${SHA}" \
+              && echo "  ${repo} -> ${NEW_TAG}" \
+              || echo "  WARNING: could not tag ${repo} with ${NEW_TAG}"
+          done

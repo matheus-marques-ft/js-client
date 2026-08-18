@@ -21,7 +21,7 @@ on:
         type: string
   push:
     branches:
-      - master
+      - dev
     tags:
       - "v*" # Only official version tags trigger the build
 

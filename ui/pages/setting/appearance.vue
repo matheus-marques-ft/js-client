@@ -14,7 +14,7 @@ definePageMeta({
 });
 
 const FALLBACK_FONTS
-  = '"Inter", "Noto Sans SC", system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif';
+  = '"Instrument Sans", "Noto Sans SC", system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif';
 
 const { t } = useI18n();
  const {
@@ -171,7 +171,7 @@ const loadSystemFonts = async () => {
         id: "notoSansSC",
         value: `"Noto Sans SC", "Noto Sans", ${fallback}`
       },
-      { label: "Inter", id: "inter", value: `"Inter", ${fallback}` }
+      { label: "Instrument Sans", id: "instrumentSans", value: `"Instrument Sans", ${fallback}` }
     ];
   } finally {
     const savedRaw = fontFamily.value;
