@@ -20,10 +20,10 @@ on:
         default: ""
         type: string
   push:
-    branches:
-      - dev
     tags:
-      - "v*" # Only official version tags trigger the build
+      - "v*" # Only official version tags trigger the build - this matrix is 5 platforms
+      # (2x macOS @ 10x billing multiplier, Windows @ 2x), too expensive to run on every
+      # dev push. Use workflow_dispatch for a manual test build against dev.
 
 env:
   VERSION: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.version || github.ref_name }}
