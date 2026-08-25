@@ -15,10 +15,11 @@ export default defineNuxtConfig({
   },
   i18n: {
     locales: [
-      { code: "zh", name: "简体中文", file: "zh.json" },
-      { code: "en", name: "English", file: "en.json" }
+      { code: "en", name: "English", file: "en.json" },
+      { code: "es", name: "Spanish", file: "es.json" },
+      { code: "pt_br", name: "Portugês", file: "pt_br.json" }
     ],
-    defaultLocale: "zh",
+    defaultLocale: "en",
     strategy: 'no_prefix'
   },
   app: {
