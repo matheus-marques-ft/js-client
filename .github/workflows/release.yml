@@ -1,0 +1,74 @@
+name: Release
+
+# Two jobs, two triggers, one file:
+#   - `tag`   fires on every push to dev (skipping this workflow's own bot
+#     commits) - computes the next vX.Y.Z from js-jumpserver's tags (the
+#     canonical source), tags this repo, and propagates the same tag to all
+#     9 siblings so the whole fork stays on one synchronized version.
+#   - `image` fires whenever a v* tag lands on this repo - whether created
+#     by the `tag` job above (this repo triggered the bump) or propagated
+#     here from a sibling - so this repo's image gets rebuilt at that
+#     version regardless of which repo's dev push actually triggered it.
+on:
+  push:
+    branches:
+      - dev
+    tags:
+      - 'v*'
+
+jobs:
+  tag:
+    if: github.ref == 'refs/heads/dev' && github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.RELEASE_PAT }}
+
+      - name: Compute next version (js-jumpserver is the canonical source)
+        id: version
+        env:
+          GH_TOKEN: ${{ secrets.RELEASE_PAT }}
+        run: |
+          LAST_TAG=$(gh api repos/matheus-marques-ft/js-jumpserver/tags --paginate --jq '.[].name' \
+            | grep -E '^v[0-9]+\.[0-9]+\.[0-9]+$' | sort -V | tail -n1)
+          if [ -z "$LAST_TAG" ]; then
+            NEW_TAG="v0.1.1"
+          else
+            VERSION=${LAST_TAG#v}
+            MAJOR=$(echo "$VERSION" | cut -d. -f1)
+            MINOR=$(echo "$VERSION" | cut -d. -f2)
+            PATCH=$(echo "$VERSION" | cut -d. -f3)
+            PATCH=$((PATCH + 1))
+            NEW_TAG="v${MAJOR}.${MINOR}.${PATCH}"
+          fi
+          echo "new_tag=$NEW_TAG" >> "$GITHUB_OUTPUT"
+          echo "Next version: $NEW_TAG"
+
+      - name: Tag this repo and propagate to all siblings
+        env:
+          GH_TOKEN: ${{ secrets.RELEASE_PAT }}
+        run: |
+          NEW_TAG="${{ steps.version.outputs.new_tag }}"
+          OWNER="matheus-marques-ft"
+          REPOS="js-jumpserver js-sdk-go js-koko js-lion js-luna js-lina js-chen js-docker-web js-installer js-client"
+          THIS_REPO="$(basename "${{ github.repository }}")"
+
+          git config user.name 'github-actions[bot]'
+          git config user.email 'github-actions[bot]@users.noreply.github.com'
+          git tag "${NEW_TAG}"
+          git push origin "${NEW_TAG}"
+
+          for repo in ${REPOS}; do
+            [ "${repo}" = "${THIS_REPO}" ] && continue
+            SHA=$(gh api "repos/${OWNER}/${repo}/git/refs/heads/dev" --jq '.object.sha')
+            gh api -X POST "repos/${OWNER}/${repo}/git/refs" \
+              -f ref="refs/tags/${NEW_TAG}" -f sha="${SHA}" \
+              && echo "  ${repo} -> ${NEW_TAG}" \
+              || echo "  WARNING: could not tag ${repo} with ${NEW_TAG}"
+          done
+
